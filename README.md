@@ -14,11 +14,33 @@ produced. Only the canonical domain is used.
 The site is fully static (`output: 'static'`) — no SSR, so the `@astrojs/cloudflare` adapter is not
 used. `wrangler deploy` uploads `./dist` as Worker static assets (no `main` entry point).
 
+## Languages / i18n
+Two language versions share the same components and data:
+
+| Route | Language | Notes |
+| --- | --- | --- |
+| `/` | Urdu (`lang="ur"`, RTL) | default |
+| `/en/` | English (`lang="en"`, LTR) | full translation of every section |
+
+Legal pages exist in both languages (`/privacy/` ↔ `/en/privacy/`, same for terms and cookies).
+
+Each page emits reciprocal `<link rel="alternate" hreflang="…">` tags plus an `x-default` entry
+pointing at the Urdu root, and the sitemap (configured with the `i18n` option of `@astrojs/sitemap`)
+adds matching `xhtml:link rel="alternate"` entries for all 8 URLs. Both homepages carry a
+`.lang-switch` link at the end of the sticky nav.
+
+Shared building blocks (so the two translations can never drift structurally):
+
+- `src/data/attraction.ts` — all single-attraction SEO entity bindings (name, coordinates, URLs,
+  rating constants, nearby landmarks…). Change these to reuse the template.
+- `src/lib/weather.ts` — weather + air-quality fetch, bilingual WMO/AQI/advice dictionaries
+  (`loadWeather(lang)`, `describeWeather(code, lang)`, `dayLabel(iso, lang)`).
+- `src/components/WeatherRefresh.astro` — the in-browser refresh script shared by both pages.
+
 ## Single-attraction SEO entity bindings
-All entity data lives in the frontmatter of `src/pages/index.astro` (`DOMAIN_NAME`,
-`ATTRACTION_FULL_NAME`, `CITY_NAME`, `STATE_PROVINCE`, `COUNTRY_NAME`, `LATITUDE`, `LONGITUDE`,
-`MAPS_SHARE_URL`, `MAPS_EMBED_SRC`, `NEARBY_LANDMARK_1/2`, `GOVT_TOURISM_URL`, …). Change only those
-constants when reusing the template for another attraction.
+These live in `src/data/attraction.ts` (`DOMAIN_NAME`, `ATTRACTION_FULL_NAME`, `CITY_NAME`,
+`STATE_PROVINCE`, `COUNTRY_NAME`, `LATITUDE`, `LONGITUDE`, `MAPS_SHARE_URL`, `MAPS_EMBED_SRC`,
+`NEARBY_LANDMARK_1/2`, `GOVT_TOURISM_URL`, …) and are imported by both language pages.
 
 Included:
 - `TouristAttraction` JSON-LD with `@id`, `image`, `alternateName`, `address`, `geo`, `hasMap`,
@@ -48,7 +70,9 @@ recommended (independent, non-commercial guide).
 Current conditions, apparent temperature, humidity, wind, a 7-day forecast and the air-quality index
 card are rendered inside the page component itself (server side, during render), then refreshed in the
 visitor's browser from the same public weather endpoints and cached locally so the numbers stay current
-between visits. The visitor-facing copy never mentions providers, keys or plans — just plain numbers
+between visits. Labels follow the page language: Urdu weekday and month names for the Urdu build, English ones for
+`/en/`, with metric units (°C, km/h, mm) in both. The
+visitor-facing copy in both languages never mentions providers, keys or plans — just plain numbers
 and plain advice ("take an umbrella", "too hot for midday walking"). Attribution for the open weather
 data service is documented here and in `TEST_REPORT.md` instead of the page.
 

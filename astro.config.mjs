@@ -13,7 +13,19 @@ const site = (process.env.SITE_URL ?? '').trim() || DEFAULT_SITE;
 export default defineConfig({
   site,
   output: 'static',
-  integrations: [sitemap()],
+  integrations: [
+    sitemap({
+      // Default language lives at the root; the English version under /en/.
+      // This adds the reciprocal xhtml:link hreflang entries to the sitemap.
+      i18n: {
+        defaultLocale: 'ur',
+        locales: {
+          ur: 'ur-PK',
+          en: 'en-US'
+        }
+      }
+    })
+  ],
   vite: {
     plugins: [tailwindcss()]
   }
