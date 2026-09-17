@@ -1,0 +1,30 @@
+# Build output — only dist/ is deployed to Cloudflare Workers
+dist/
+.astro/
+*.tsbuildinfo
+
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Cloudflare / wrangler (local state, secrets)
+.wrangler/
+.dev.vars
+.wrangler/tmp/
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# Editors / tools
+.vscode/
+.idea/
+.codebuddy/
+
+# OS / logs
+.DS_Store
+Thumbs.db
+*.log
+npm-debug.log*
+yarn-error.log*

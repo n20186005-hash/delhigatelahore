@@ -1,0 +1,55 @@
+{
+  "name": "دہلی گیٹ لاہور — Delhi Gate, Lahore Visitor Guide",
+  "short_name": "Delhi Gate",
+  "description": "دہلی گیٹ لاہور (Delhi Gate, Lahore) کے لیے اردو وزیٹر گائیڈ: تاریخ، محل وقوع، نقشہ، اوقات، آس پاس کے مقامات اور FAQ۔",
+  "lang": "ur",
+  "dir": "rtl",
+  "id": "/",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui", "browser"],
+  "orientation": "any",
+  "background_color": "#fff8ec",
+  "theme_color": "#5e241e",
+  "categories": ["travel", "education", "lifestyle"],
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icons/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "نقشہ / Location map",
+      "short_name": "نقشہ",
+      "description": "دہلی گیٹ لاہور کا نقشہ اور پتہ",
+      "url": "/#map"
+    },
+    {
+      "name": "عام سوالات / FAQ",
+      "short_name": "سوالات",
+      "description": "ٹکٹ، پارکنگ، وقت اور رسائی سے متعلق سوالات",
+      "url": "/#faq"
+    }
+  ]
+}

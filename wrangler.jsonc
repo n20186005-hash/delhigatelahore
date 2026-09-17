@@ -1,10 +1,10 @@
 {
   "$schema": "./node_modules/wrangler/config-schema.json",
   "name": "delhi-gate-lahore",
-  "main": "./dist/_worker.js/index.js",
   "compatibility_date": "2026-09-17",
+  // Static site: no Worker script entry point (`main`) is needed, so wrangler
+  // only serves the built assets from ./dist.
   "assets": {
-    "binding": "ASSETS",
     "directory": "./dist"
   }
 }

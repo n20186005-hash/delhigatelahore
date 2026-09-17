@@ -1,67 +1,334 @@
 ---
 import '../styles/global.css';
 
-const site = Astro.site;
-const pagePath = '/';
-const canonical = site ? new URL(pagePath, site).toString() : undefined;
-const ogImagePath = '/icons/apple-touch-icon.png';
-const ogImage = site ? new URL(ogImagePath, site).toString() : undefined;
+// ---------------------------------------------------------------------------
+// Single-attraction SEO entity bindings — change only the values below
+// ---------------------------------------------------------------------------
+const DOMAIN_NAME = 'delhigatelahore.com';
+const ATTRACTION_FULL_NAME = 'Delhi Gate, Lahore';
+const ATTRACTION_SHORT_NAME = 'Delhi Gate';
+const CITY_NAME = 'Lahore';
+const STATE_PROVINCE = 'Punjab';
+const COUNTRY_NAME = 'Pakistan';
+const COUNTRY_CODE_2LETTER = 'PK';
+const POSTAL_CODE = '54000';
+const LATITUDE = 31.5821649;
+const LONGITUDE = 74.3264164;
+const MAPS_SHARE_URL = 'https://maps.app.goo.gl/Q8yoAtkexN7HjBCu8';
+const MAPS_EMBED_SRC = 'https://www.google.com/maps?q=31.5821649,74.3264164&hl=en&z=17&output=embed';
+const MAPS_DIRECTIONS_URL = 'https://www.google.com/maps?q=31.5821649,74.3264164';
+const NEARBY_LANDMARK_1 = 'Wazir Khan Mosque';
+const NEARBY_LANDMARK_2 = 'Shahi Hammam';
+const GOVT_TOURISM_URL = 'https://www.wcla.pk/';
+const GOVT_TOURISM_URL_ALT = 'https://tourism.gov.pk/';
+const WIKIPEDIA_URL = 'https://en.wikipedia.org/wiki/Delhi_Gate,_Lahore';
+const WIKIMEDIA_CATEGORY_URL = 'https://commons.wikimedia.org/wiki/Category:Delhi_Gate_(Lahore)';
+const MET_OFFICE_URL = 'https://www.pmd.gov.pk/';
+
+// Rating / review numbers are shown on the page only and are intentionally
+// kept out of every JSON-LD block (see "reviews" section near the map).
+const RATING_VALUE = '4.6';
+const RATING_COUNT = '21,997';
+const RATING_MAX = '5';
+const REVIEW_CATEGORY_EN = 'Historical landmark';
+const REVIEW_CATEGORY_UR = 'تاریخی یادگار';
+const REVIEW_SYNC_UR = 'ستمبر 2026ء';
+const REVIEW_SYNC_EN = 'September 2026';
+
+const site = Astro.site ?? new URL(`https://${DOMAIN_NAME}`);
+const canonical = new URL('/', site).toString();
+const ogImage = new URL('/images/og-cover.png', site).toString();
+const ogImageAlt = `${ATTRACTION_FULL_NAME} — ${CITY_NAME}, ${COUNTRY_NAME}`;
+const heroImageAbsolute =
+  'https://upload.wikimedia.org/wikipedia/commons/1/1b/Delhi_Gate%2C_Lahore.jpg';
+
+// ---------------------------------------------------------------------------
+// Weather & air quality
+// Data is requested from inside this component (server side) while the page is
+// rendered, so visitors never see request details — only the plain numbers.
+// The static page is then refreshed in the visitor's browser (see #wx script).
+// ---------------------------------------------------------------------------
+const WEATHER_QUERY =
+  `latitude=${LATITUDE}&longitude=${LONGITUDE}` +
+  '&current=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,weather_code,wind_speed_10m' +
+  '&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,precipitation_probability_max,uv_index_max,wind_speed_10m_max' +
+  '&forecast_days=7&timezone=Asia%2FKarachi';
+const WEATHER_API = `https://api.open-meteo.com/v1/forecast?${WEATHER_QUERY}`;
+const WEATHER_AIR_API =
+  `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${LATITUDE}&longitude=${LONGITUDE}` +
+  '&current=us_aqi,european_aqi,pm2_5,pm10&timezone=Asia%2FKarachi';
+
+// WMO weather codes → [Urdu description, glyph]
+const WMO_CODES = {
+  0: ['صاف آسمان', '☀️'],
+  1: ['عموماً صاف', '🌤️'],
+  2: ['جزوی بادل', '⛅'],
+  3: ['ابراہ', '☁️'],
+  45: ['دھند', '🌫️'],
+  48: ['جمی ہوئی دھند', '🌫️'],
+  51: ['ہلکی بوندا باندی', '🌦️'],
+  53: ['درمیانی بوندا باندی', '🌦️'],
+  55: ['گہری بوندا باندی', '🌧️'],
+  56: ['ہلکی برفانی بوندا باندی', '🌧️'],
+  57: ['گہری برفانی بوندا باندی', '🌧️'],
+  61: ['ہلکی بارش', '🌧️'],
+  63: ['درمیانی بارش', '🌧️'],
+  65: ['تیز بارش', '🌧️'],
+  66: ['ہلکی برفانی بارش', '🌨️'],
+  67: ['تیز برفانی بارش', '🌨️'],
+  71: ['ہلکی برفباری', '🌨️'],
+  73: ['درمیانی برفباری', '🌨️'],
+  75: ['شدید برفباری', '❄️'],
+  77: ['برف کے دانے', '🌨️'],
+  80: ['ہلکی جھڑی', '🌦️'],
+  81: ['درمیانی جھڑی', '🌧️'],
+  82: ['تیز جھڑی', '⛈️'],
+  85: ['ہلکی برفانی جھڑی', '🌨️'],
+  86: ['شدید برفانی جھڑی', '❄️'],
+  95: ['گرج چمک کے ساتھ بارش', '⛈️'],
+  96: ['گرج چمک اور اولے', '⛈️'],
+  99: ['شدید گرج چمک اور اولے', '⛈️']
+};
+const WMO_FALLBACK = ['موسمی معلومات دستیاب نہیں', '🌡️'];
+const WEEKDAYS = ['اتوار', 'پیر', 'منگل', 'بدھ', 'جمعرات', 'جمعہ', 'ہفتہ'];
+const MONTHS = ['جنوری', 'فروری', 'مارچ', 'اپریل', 'مئی', 'جون', 'جولائی', 'اگست', 'ستمبر', 'اکتوبر', 'نومبر', 'دسمبر'];
+const AQI_LEVELS: Array<[number, string, string]> = [
+  [50, 'اچھا', 'good'],
+  [100, 'درمیانہ', 'moderate'],
+  [150, 'حساس افراد کے لیے غیر صحت بخش', 'sensitive'],
+  [200, 'غیر صحت بخش', 'unhealthy'],
+  [300, 'بہت غیر صحت بخش', 'very-unhealthy'],
+  [Infinity, 'خطرناک', 'hazardous']
+];
+const WET_CODES = [51, 53, 55, 56, 57, 61, 63, 65, 66, 67, 80, 81, 82, 85, 86, 95, 96, 99];
+
+type WeatherDay = {
+  date: string;
+  label: string;
+  code: number | null;
+  max: number | null;
+  min: number | null;
+  rainChance: number | null;
+  rainSum: number | null;
+  uv: number | null;
+};
+type WeatherData = {
+  temperature: number | null;
+  apparent: number | null;
+  humidity: number | null;
+  wind: number | null;
+  precipitation: number | null;
+  code: number | null;
+  observedAt: string | null;
+  days: WeatherDay[];
+};
+type AirQualityData = {
+  aqi: number | null;
+  pm25: number | null;
+  pm10: number | null;
+  observedAt: string | null;
+  level: string | null;
+  levelKey: string | null;
+};
+
+const roundNumber = (value: unknown) => (typeof value === 'number' && Number.isFinite(value) ? Math.round(value) : null);
+const describeWeather = (code: unknown): string[] => WMO_CODES[Number(code) as keyof typeof WMO_CODES] ?? WMO_FALLBACK;
+const aqiLevel = (aqi: number) => AQI_LEVELS.find(([limit]) => aqi <= limit) ?? AQI_LEVELS[AQI_LEVELS.length - 1];
+
+function dayLabel(isoDate: string) {
+  const [year, month, day] = (isoDate ?? '').split('-').map(Number);
+  if (!year || !month || !day) return isoDate ?? '';
+  const weekday = WEEKDAYS[new Date(Date.UTC(year, month - 1, day)).getUTCDay()];
+  return `${weekday} ${day} ${MONTHS[month - 1]}`;
+}
+
+let weather: WeatherData | null = null;
+let airQuality: AirQualityData | null = null;
+try {
+  const [forecastResponse, airResponse] = await Promise.allSettled([
+    fetch(WEATHER_API, { headers: { accept: 'application/json' } }),
+    fetch(WEATHER_AIR_API, { headers: { accept: 'application/json' } })
+  ]);
+
+  if (forecastResponse.status === 'fulfilled' && forecastResponse.value.ok) {
+    const payload = await forecastResponse.value.json();
+    const current = payload?.current ?? {};
+    const daily = payload?.daily ?? {};
+    weather = {
+      temperature: roundNumber(current.temperature_2m),
+      apparent: roundNumber(current.apparent_temperature),
+      humidity: roundNumber(current.relative_humidity_2m),
+      wind: roundNumber(current.wind_speed_10m),
+      precipitation: typeof current.precipitation === 'number' ? current.precipitation : null,
+      code: Number.isFinite(Number(current.weather_code)) ? Number(current.weather_code) : null,
+      observedAt: current.time ?? null,
+      days: (daily.time ?? []).map((date: string, index: number) => ({
+        date,
+        label: dayLabel(date),
+        code: Number.isFinite(Number(daily.weather_code?.[index])) ? Number(daily.weather_code[index]) : null,
+        max: roundNumber(daily.temperature_2m_max?.[index]),
+        min: roundNumber(daily.temperature_2m_min?.[index]),
+        rainChance: roundNumber(daily.precipitation_probability_max?.[index]),
+        rainSum: typeof daily.precipitation_sum?.[index] === 'number' ? daily.precipitation_sum[index] : null,
+        uv: typeof daily.uv_index_max?.[index] === 'number' ? Math.round(daily.uv_index_max[index] * 10) / 10 : null
+      }))
+    };
+  }
+
+  if (airResponse.status === 'fulfilled' && airResponse.value.ok) {
+    const payload = await airResponse.value.json();
+    const current = payload?.current ?? {};
+    const aqi = roundNumber(current.us_aqi);
+    airQuality = {
+      aqi,
+      pm25: roundNumber(current.pm2_5),
+      pm10: roundNumber(current.pm10),
+      observedAt: current.time ?? null,
+      level: aqi == null ? null : aqiLevel(aqi)[1],
+      levelKey: aqi == null ? null : aqiLevel(aqi)[2]
+    };
+  }
+} catch {
+  weather = null;
+  airQuality = null;
+}
+
+const todayWeather = weather?.days?.[0] ?? null;
+const needsUmbrella =
+  (todayWeather?.rainChance ?? 0) >= 60 ||
+  (todayWeather?.rainSum ?? 0) >= 2 ||
+  (todayWeather?.code != null && WET_CODES.includes(todayWeather.code));
+const hotDay = (todayWeather?.max ?? 0) >= 38;
+const poorAir = (airQuality?.aqi ?? 0) > 150;
+const weatherAdvice = needsUmbrella
+  ? 'آج بارش کا امکان زیادہ ہے — چھتری یا بارش کوٹ ساتھ رکھیں اور پتھریلی گلیوں میں پھسلن کا خیال رکھیں۔'
+  : hotDay
+    ? 'آج گرمی کا دن ہے — پانی، ٹوپی اور دھوپ سے بچاؤ ساتھ رکھیں، واک صبح یا شام کو رکھیں۔'
+    : poorAir
+      ? 'ہوا کا معیار خراب ہے — حساس افراد ماسک پہنیں اور باہر زیادہ دیر ٹھہرنے سے گریز کریں۔'
+      : 'موسم عام طور پر پیدل واک کے لیے موزوں ہے — پھر بھی پانی، ٹوپی اور آرام دہ جوتے بہتر ہیں۔';
 
 const attractionSchema = {
   '@context': 'https://schema.org',
   '@type': 'TouristAttraction',
-  name: 'دہلی گیٹ، لاہور',
-  alternateName: 'Delhi Gate, Lahore',
-  description: 'لاہور کے اندرون شہر کا تاریخی دروازہ، شاہی گزرگاہ اور مغلیہ ورثے کے اہم مقامات تک رسائی کا نمایاں نقطہ۔',
+  '@id': `${canonical}#attraction`,
+  name: ATTRACTION_FULL_NAME,
+  alternateName: [
+    ATTRACTION_SHORT_NAME,
+    'دہلی گیٹ',
+    'دہلی دروازہ',
+    `${CITY_NAME} ${ATTRACTION_FULL_NAME}`,
+    'دہلی گیٹ لاہور'
+  ],
+  description: `Comprehensive visitor guide to ${ATTRACTION_FULL_NAME} in ${CITY_NAME}, ${STATE_PROVINCE}, ${COUNTRY_NAME}.`,
+  url: canonical,
+  image: [ogImage, heroImageAbsolute],
+  isAccessibleForFree: true,
+  publicAccess: true,
+  isPartOf: { '@type': 'TouristAttraction', name: 'Walled City of Lahore', url: WIKIPEDIA_URL },
   address: {
     '@type': 'PostalAddress',
     streetAddress: 'H8JG+PHM, Inside Delhi Gate, Akbari Mandi, Walled City of Lahore',
-    addressLocality: 'Lahore',
-    postalCode: '54000',
-    addressRegion: 'Punjab',
-    addressCountry: 'PK'
+    addressLocality: CITY_NAME,
+    addressRegion: STATE_PROVINCE,
+    postalCode: POSTAL_CODE,
+    addressCountry: COUNTRY_CODE_2LETTER
   },
-  geo: { '@type': 'GeoCoordinates', latitude: 31.5821649, longitude: 74.3264164 },
+  geo: { '@type': 'GeoCoordinates', latitude: LATITUDE, longitude: LONGITUDE },
+  hasMap: MAPS_SHARE_URL,
+  sameAs: [MAPS_SHARE_URL, GOVT_TOURISM_URL, WIKIPEDIA_URL, WIKIMEDIA_CATEGORY_URL],
   openingHoursSpecification: [
     { '@type': 'OpeningHoursSpecification', dayOfWeek: ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'], opens: '00:00', closes: '23:59' }
-  ],
-  aggregateRating: { '@type': 'AggregateRating', ratingValue: '4.6', reviewCount: '21996', bestRating: '5', worstRating: '1' },
-  isAccessibleForFree: true,
-  ...(canonical ? { url: canonical } : {})
+  ]
+  // NOTE: aggregateRating / review intentionally omitted — review data is
+  // third-party Google Maps content and stays in the visible page only.
+};
+
+const breadcrumbSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'BreadcrumbList',
+  '@id': `${canonical}#breadcrumb`,
+  itemListElement: [
+    { '@type': 'ListItem', position: 1, name: ATTRACTION_FULL_NAME, item: canonical },
+    { '@type': 'ListItem', position: 2, name: CITY_NAME, item: 'https://en.wikipedia.org/wiki/Lahore' },
+    { '@type': 'ListItem', position: 3, name: STATE_PROVINCE, item: 'https://en.wikipedia.org/wiki/Punjab,_Pakistan' },
+    { '@type': 'ListItem', position: 4, name: COUNTRY_NAME, item: 'https://en.wikipedia.org/wiki/Pakistan' }
+  ]
 };
 
 const faq = [
-  ['دہلی گیٹ دیکھنے کی فیس کتنی ہے؟','خود تاریخی دروازہ اور بازار کی گزرگاہ عام طور پر بغیر ٹکٹ دیکھی جا سکتی ہے۔ شahi حمام، خصوصی واک یا گائیڈڈ ٹور کی الگ فیس ہو سکتی ہے؛ روانگی سے پہلے WCLA کی تازہ معلومات دیکھیں۔'],
+  ['دہلی گیٹ (Delhi Gate, Lahore) کہاں واقع ہے؟', `دہلی گیٹ لاہور، پنجاب، پاکستان کے فصیل بند پرانے شہر (Walled City of Lahore) کے مشرقی جانب اکبری منڈی کے قریب واقع ہے۔ پتہ: H8JG+PHM، Inside Delhi Gate، Akbari Mandi، Walled City of Lahore، Lahore ${POSTAL_CODE}، Pakistan؛ متناسقات ${LATITUDE}, ${LONGITUDE}۔`],
+  ['دہلی گیٹ دیکھنے کی فیس کتنی ہے؟','خود تاریخی دروازہ اور بازار کی گزرگاہ عام طور پر بغیر ٹکٹ دیکھی جا سکتی ہے۔ شاہی حمام، خصوصی واک یا گائیڈڈ ٹور کی الگ فیس ہو سکتی ہے؛ روانگی سے پہلے WCLA کی تازہ معلومات دیکھیں۔'],
   ['کتنا وقت رکھنا بہتر ہے؟','صرف دروازے کے لیے 20–40 منٹ کافی ہو سکتے ہیں، مگر شاہی حمام، وزیر خان مسجد اور شاہی گزرگاہ کے ساتھ 2–3 گھنٹے زیادہ مناسب ہیں۔'],
   ['کون سا وقت بہتر ہے؟','صبح نسبتاً پرسکون روشنی اور کم ہجوم کے لیے اچھا ہے۔ شام میں بازار کا ماحول زیادہ زندہ محسوس ہوتا ہے، مگر ٹریفک اور رش بڑھ سکتا ہے۔'],
   ['پارکنگ کہاں ملتی ہے؟','دروازے کے عین اندر گاڑی لے جانا عملی نہیں۔ سرکلر روڈ کے اطراف دستیاب قانونی پارکنگ یا ڈراپ آف استعمال کریں اور آخری حصہ پیدل یا رکشہ سے طے کریں۔'],
-  ['خاندان کے ساتھ جا سکتے ہیں؟','جی ہاں۔ یہ فعال بازار اور تاریخی محلہ ہے؛ بچوں کے ساتھ مصروف گلیوں میں ہاتھ تھامیں، آرام دہ جوتے پہنیں اور مذہبی مقامات پر لباس و آداب کا خیال رکھیں۔']
+  ['دہلی گیٹ کے قریب کون سی مشہور جگہیں ہیں؟', `دروازے سے اندر شاہی گزرگاہ پر ${NEARBY_LANDMARK_1} تقریباً 200 میٹر پر، ${NEARBY_LANDMARK_2} چند قدم کی دوری پر، اور گلی سرجن سنگھ، چوک وزیر خان، اکبری منڈی، لاہور قلعہ (Lahore Fort) اور بادشاہی مسجد (Badshahi Mosque) بھی اسی تاریخی شہر میں ہیں۔`],
+  ['خاندان کے ساتھ جا سکتے ہیں؟','جی ہاں۔ یہ فعال بازار اور تاریخی محلہ ہے؛ بچوں کے ساتھ مصروف گلیوں میں ہاتھ تھامیں، آرام دہ جوتے پہنیں اور مذہبی مقامات پر لباس و آداب کا خیال رکھیں۔'],
+  ['ہوائی اڈے سے دہلی گیٹ لاہور تک جانے کا بہترین طریقہ کیا ہے؟','لاہور کے بین الاقوامی ہوائی اڈے سے ٹیکسی یا مقامی رائیڈ ہیلنگ سروس کے ذریعے سرکلر روڈ پر واقع دہلی گیٹ تک پہنچنا سب سے آسان ہے؛ عام حالات میں یہ سفر تقریباً آدھے سے ایک گھنٹے کا ہے، مگر رش کے اوقات میں وقت بڑھ سکتا ہے۔'],
+  [`${ATTRACTION_SHORT_NAME} دیکھنے کے لیے سال کا بہترین وقت کون سا ہے؟`,'فروری تا اپریل اور اکتوبر کے مہینے سب سے متوازن موسم دیتے ہیں — درجہ حرارت معتدل، بارش کم اور روشنی صاف۔ مئی تا جون میں شدید گرمی، جولائی تا ستمبر میں مون سون کی تیز بارشیں، اور دسمبر تا جنوری میں دھند و فضائی آلودگی زیادہ ہوتی ہے۔'],
+  ['کیا دروازے کے قریب بیت الخلا، پارکنگ اور اے ٹی ایم ملتے ہیں؟','جی ہاں، مگر بنیادی نوعیت کے۔ بڑے تاریخی مقامات اور مساجد کے احاطوں کے قریب صفائی کی سہولت ملتی ہے، پارکنگ دروازے کے باہر سرکلر روڈ کے کنارے قانونی اور فیس والی جگہوں پر دستیاب ہے، اور اے ٹی ایم بڑی سڑکوں یا مارکیٹوں کی طرف ہیں۔ چھوٹی خریداری کے لیے نقد رقم ساتھ رکھیں۔']
 ];
 const faqSchema = {
   '@context':'https://schema.org', '@type':'FAQPage',
+  '@id': `${canonical}#faq`,
   mainEntity: faq.map(([q,a]) => ({ '@type':'Question', name:q, acceptedAnswer:{'@type':'Answer', text:a} }))
 };
 ---
 <!doctype html>
 <html lang="ur" dir="rtl">
 <head>
-  <meta charset="UTF-8" />
+<meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>دہلی گیٹ لاہور — اندرون شہر کی شاہی دہلیز</title>
-  <meta name="description" content="دہلی گیٹ لاہور کے لیے اردو وزیٹر گائیڈ: تاریخ، شاہی گزرگاہ، اوقات، فیس، پارکنگ، ٹرانسپورٹ، آس پاس کے مقامات، کھانا اور FAQ۔" />
-  {canonical && <link rel="canonical" href={canonical} />}
-  <meta property="og:title" content="دہلی گیٹ لاہور — اندرون شہر کی شاہی دہلیز" />
-  <meta property="og:description" content="دہلی گیٹ، شاہی حمام اور وزیر خان مسجد کے ساتھ پرانے لاہور کو قدموں سے دریافت کریں۔" />
+  <title>دہلی گیٹ لاہور — Delhi Gate {CITY_NAME} | Visitor Guide &amp; Location</title>
+  <meta name="description" content={`${ATTRACTION_FULL_NAME} (دہلی گیٹ لاہور) — ${CITY_NAME}, ${STATE_PROVINCE}, ${COUNTRY_NAME} کا تاریخی مغلیہ دروازہ۔ محل وقوع، نقشہ، پتہ، اوقات، فیس، ${NEARBY_LANDMARK_1} اور ${NEARBY_LANDMARK_2} جیسے آس پاس کے مقامات، ٹرانسپورٹ اور ٹرپ ٹپس۔`} />
+  <meta name="robots" content="index, follow, max-image-preview:large" />
+  <link rel="canonical" href={canonical} />
+
+  <!-- Local / geo meta -->
+  <meta name="geo.region" content={`${COUNTRY_CODE_2LETTER}-PB`} />
+  <meta name="geo.placename" content={CITY_NAME} />
+  <meta name="geo.position" content={`${LATITUDE};${LONGITUDE}`} />
+  <meta name="ICBM" content={`${LATITUDE}, ${LONGITUDE}`} />
+
+  <!-- Open Graph -->
+  <meta property="og:site_name" content={`دہلی گیٹ لاہور — ${DOMAIN_NAME}`} />
+  <meta property="og:locale" content="ur_PK" />
+  <meta property="og:title" content={`دہلی گیٹ لاہور — ${ATTRACTION_FULL_NAME} Travel Guide`} />
+  <meta property="og:description" content={`Official visitor guide to ${ATTRACTION_FULL_NAME} in ${CITY_NAME}, ${STATE_PROVINCE}, ${COUNTRY_NAME}.`} />
   <meta property="og:type" content="website" />
-  {canonical && <meta property="og:url" content={canonical} />}
-  {ogImage && <meta property="og:image" content={ogImage} />}
+  <meta property="og:url" content={canonical} />
+  <meta property="og:image" content={ogImage} />
+  <meta property="og:image:alt" content={ogImageAlt} />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+
+  <!-- Twitter / X -->
   <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content={`دہلی گیٹ لاہور — ${ATTRACTION_FULL_NAME} Travel Guide`} />
+  <meta name="twitter:description" content={`${ATTRACTION_FULL_NAME}, ${CITY_NAME}, ${STATE_PROVINCE}, ${COUNTRY_NAME} — location, map, opening details and nearby landmarks.`} />
+  <meta name="twitter:image" content={ogImage} />
+  <meta name="twitter:image:alt" content={ogImageAlt} />
+
+  <!-- PWA -->
+  <meta name="theme-color" content="#5e241e" />
+  <meta name="color-scheme" content="light" />
+  <meta name="application-name" content="دہلی گیٹ لاہور" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Delhi Gate" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <link rel="manifest" href="/manifest.webmanifest" />
+
   <link rel="icon" href="/icons/favicon.svg" type="image/svg+xml" />
   <link rel="icon" href="/icons/favicon-32.png" sizes="32x32" />
   <link rel="icon" href="/icons/favicon-16.png" sizes="16x16" />
   <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" sizes="180x180" />
-  <script type="application/ld+json" set:html={JSON.stringify(attractionSchema)}></script>
-  <script type="application/ld+json" set:html={JSON.stringify(faqSchema)}></script>
+
+  <!-- Structured data: attraction entity, breadcrumb hierarchy, FAQ -->
+  <script is:inline type="application/ld+json" set:html={JSON.stringify(attractionSchema)}></script>
+  <script is:inline type="application/ld+json" set:html={JSON.stringify(breadcrumbSchema)}></script>
+  <script is:inline type="application/ld+json" set:html={JSON.stringify(faqSchema)}></script>
+
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-HXM22WWPKP"></script>
   <script is:inline>
     window.dataLayer = window.dataLayer || [];
@@ -74,21 +341,35 @@ const faqSchema = {
   <header class="hero tile-border">
     <div class="container hero-content">
       <div class="eyebrow">اندرون لاہور · شاہی گزرگاہ</div>
-      <h1>دہلی گیٹ</h1>
+      <h1>دہلی گیٹ لاہور (Delhi Gate, Lahore)</h1>
+      <p><strong>{ATTRACTION_FULL_NAME}</strong> — جسے عام طور پر صرف <strong>دہلی گیٹ (Delhi Gate)</strong> کہا جاتا ہے — <strong>{CITY_NAME}</strong>، <strong>{STATE_PROVINCE}</strong>، <strong>{COUNTRY_NAME}</strong> کے قلب میں واقع ہے۔ دہلی گیٹ لاہور اس تاریخی فصیل بند شہر (Walled City of Lahore) کا مرکزی مشرقی دروازہ اور اس خطے کو دریافت کرنے والے زائرین کے لیے اہم نقطۂ آغاز ہے۔</p>
       <p>اینٹوں کی اس بلند دہلیز کے پار لاہور کا وہ شہر شروع ہوتا ہے جہاں بازار، گلیاں، حمام، مسجد اور روزمرہ زندگی ایک ہی تاریخی منظر میں مل جاتے ہیں۔</p>
       <div class="pills">
-        <span class="pill">★ 4.6 · 21,996 جائزے</span>
+        <a class="pill" href="#reviews" title="گوگل میپس پر جائزے">★ {RATING_VALUE} · {RATING_COUNT} جائزے</a>
+        <span class="pill">تاریخی یادگار · {REVIEW_CATEGORY_EN}</span>
         <span class="pill">24 گھنٹے گزرگاہ</span>
         <span class="pill">تقریباً 2–3 گھنٹے مکمل واک</span>
-        <span class="pill">31.5821649, 74.3264164</span>
+        <span class="pill">{LATITUDE}, {LONGITUDE}</span>
       </div>
     </div>
   </header>
 
+  <nav class="breadcrumb" aria-label="بریڈ کرومب">
+    <div class="container breadcrumb-inner">
+      <ol>
+        <li><a href="/">دہلی گیٹ لاہور</a></li>
+        <li><a href="#story">{CITY_NAME}</a></li>
+        <li><a href="#visit">{STATE_PROVINCE}</a></li>
+        <li aria-current="page">{COUNTRY_NAME}</li>
+      </ol>
+      <span class="breadcrumb-path">{ATTRACTION_FULL_NAME} → {CITY_NAME} → {STATE_PROVINCE} → {COUNTRY_NAME}</span>
+    </div>
+  </nav>
+
   <nav class="nav">
     <div class="container nav-inner">
-      <a class="brand" href="#top"><img src="/icons/logo.svg" alt="دہلی گیٹ لوگو" />دہلی گیٹ لاہور</a>
-      <a href="#story">تعارف</a><a href="#visit">وزٹ پلان</a><a href="#food">کھانا</a><a href="#nearby">قریب کے مقامات</a><a href="#map">نقشہ</a><a href="#faq">سوالات</a>
+      <a class="brand" href="#top"><img src="/icons/logo.svg" alt="دہلی گیٹ لاہور لوگو" />دہلی گیٹ لاہور</a>
+      <a href="#story">تعارف</a><a href="#visit">وزٹ پلان</a><a href="#weather">موسم</a><a href="#seasons">سہ ماہی</a><a href="#transport">کیسے پہنچیں</a><a href="#services">سہولیات</a><a href="#history">تاریخ</a><a href="#nearby">قریب کے مقامات</a><a href="#routes">راستے</a><a href="#food">کھانا</a><a href="#responsibility">ذمہ داریاں</a><a href="#reviews">جائزے</a><a href="#map">نقشہ</a><a href="#faq">سوالات</a><a href="#sources">ذرائع</a>
     </div>
   </nav>
 
@@ -97,12 +378,14 @@ const faqSchema = {
       <div class="container grid grid-2" style="align-items:center">
         <div>
           <div class="section-kicker">ایک دروازہ، پورا شہر</div>
-          <h2>شاہی راستے کا زندہ آغاز</h2>
+          <h2>دہلی گیٹ کے بارے میں (About Delhi Gate, {CITY_NAME})</h2>
           <p class="lede">دہلی گیٹ لاہور کے فصیل بند شہر کے باقی ماندہ تاریخی دروازوں میں سے ایک ہے۔ یہ مشرقی جانب اس راستے پر واقع ہے جو کبھی قلعہ لاہور کو دہلی کی سمت جانے والے شاہی راستے سے جوڑتا تھا۔ آج بھی اس کے اندر بازار، شاہی حمام اور وزیر خان مسجد تک پھیلی شاہی گزرگاہ پر شہری زندگی پوری شدت سے جاری ہے۔</p>
+          <p>کیا آپ لاہور کے اندرون شہر کی سب سے مشہور تاریخی دہلیز تلاش کر رہے ہیں؟ یہیں سے پرانا شہر شروع ہوتا ہے: دروازے کے اندر داخل ہوتے ہی پتلی گلیاں، اینٹوں والی محرابیں اور کاشی کاری کے نمونے ایک ہی مسلسل تجربے میں بدل جاتے ہیں۔</p>
+          <p>{ATTRACTION_FULL_NAME} کے قریب آ کر زائرین آسانی سے ارد گرد کے تاریخی مقامات دیکھ سکتے ہیں، جن میں <strong>{NEARBY_LANDMARK_1}</strong> اور <strong>{NEARBY_LANDMARK_2}</strong> سب سے نمایاں ہیں۔</p>
           <div class="card"><strong>کیا دیکھیں:</strong> دروازے کی اینٹوں والی محراب، اندرونی بازار، شاہی حمام، سبیل والی گلی، گلی سرجن سنگھ، چوک وزیر خان اور وزیر خان مسجد۔</div>
         </div>
         <div class="photo-card arch">
-          <img src="https://upload.wikimedia.org/wikipedia/commons/2/28/Wazir_khan_mosque_entry.jpg" alt="وزیر خان مسجد کا صحن" loading="lazy" />
+          <img src="https://upload.wikimedia.org/wikipedia/commons/2/28/Wazir_khan_mosque_entry.jpg" alt={`${NEARBY_LANDMARK_1} — ${ATTRACTION_SHORT_NAME}, ${CITY_NAME} کے قریب مشہور مغلیہ مسجد کا صحن`} loading="lazy" width="1200" height="900" />
           <div class="caption">وزیر خان مسجد — تصویر: Shahbaz Aslam، CC BY-SA 4.0</div>
         </div>
       </div>
@@ -110,7 +393,7 @@ const faqSchema = {
 
     <section id="visit" style="background:#f0d9b522">
       <div class="container">
-        <div class="section-kicker">آنے سے پہلے</div><h2>عملی وزیٹر گائیڈ</h2>
+        <div class="section-kicker">آنے سے پہلے</div><h2>عملی وزیٹر گائیڈ (Visitor Guide for {ATTRACTION_SHORT_NAME})</h2>
         <div class="grid grid-3">
           <article class="card"><h3>🎟️ ٹکٹ / فیس</h3><p>دہلی گیٹ کی عام گزرگاہ کے لیے الگ داخلہ ٹکٹ نہیں۔ WCLA کے گائیڈڈ واک، خصوصی ایونٹس یا اندرونی تاریخی عمارتوں کے نرخ الگ ہو سکتے ہیں۔</p></article>
           <article class="card"><h3>🕰️ بہترین وقت</h3><p>صبح 8 سے 10 بجے فوٹوگرافی، کم رش اور نرم روشنی کے لیے اچھا رہتا ہے۔ شام کو بازار زیادہ زندہ ہوتا ہے مگر ٹریفک بھی بڑھ جاتی ہے۔</p></article>
@@ -122,10 +405,279 @@ const faqSchema = {
       </div>
     </section>
 
+    <section id="weather" style="background:#eef3f7">
+      <div class="container">
+        <div class="section-kicker">موسم اور پیش گوئی</div>
+        <h2>{ATTRACTION_SHORT_NAME}، {CITY_NAME} کا آج کا موسم اور 7 دن کی پیش گوئی</h2>
+        {weather ? (
+          <div class="wx-wrap">
+            <article class="wx-now">
+              <div class="wx-now-head">
+                <span class="wx-glyph" id="wx-glyph">{describeWeather(weather.code)[1]}</span>
+                <span class="wx-temp"><strong id="wx-temp">{weather.temperature}</strong>°</span>
+                <span class="wx-unit">سینٹی گریڈ · {CITY_NAME}</span>
+              </div>
+              <p class="wx-now-desc" id="wx-desc">{describeWeather(weather.code)[0]}</p>
+              <ul class="wx-metrics">
+                <li><span>محسوس ہوتا ہے</span><strong><span id="wx-feels">{weather.apparent}</span>°</strong></li>
+                <li><span>نمی</span><strong><span id="wx-hum">{weather.humidity}</span>%</strong></li>
+                <li><span>ہوا کی رفتار</span><strong><span id="wx-wind">{weather.wind}</span> کلومیٹر/گھنٹہ</strong></li>
+                <li><span>گزشتہ گھنٹے کی بارش</span><strong><span id="wx-precip">{weather.precipitation ?? 0}</span> ملی میٹر</strong></li>
+              </ul>
+              <p class="wx-clock" id="wx-clock">تازہ کاری: {(weather.observedAt ?? '').replace('T', ' · ')}</p>
+            </article>
+            <div class="wx-side">
+              <div class="wx-advice">
+                <h3>آج کا مشورہ</h3>
+                <p id="wx-advice">{weatherAdvice}</p>
+              </div>
+              {airQuality ? (
+                <div class={`wx-air wx-air-${airQuality.levelKey ?? 'unknown'}`}>
+                  <h3>ہوا کا معیار</h3>
+                  <p class="wx-air-aqi">اشاریہ <strong id="wx-aqi">{airQuality.aqi}</strong> · <span id="wx-aqi-label">{airQuality.level}</span></p>
+                  <p class="wx-air-pm">باریک ذرات (PM2.5): <strong id="wx-pm25">{airQuality.pm25}</strong> · موٹے ذرات (PM10): <strong id="wx-pm10">{airQuality.pm10}</strong></p>
+                </div>
+              ) : (
+                <div class="wx-air">
+                  <h3>ہوا کا معیار</h3>
+                  <p>ہوا کے معیار کی تازہ معلومات اس وقت دستیاب نہیں۔</p>
+                </div>
+              )}
+            </div>
+          </div>
+          <ul class="wx-days">
+            {weather.days.map((day, index) => (
+              <li class="wx-day" data-day={String(index)}>
+                <span class="wx-day-name">{day.label}</span>
+                <span class="wx-day-glyph" data-glyph>{describeWeather(day.code)[1]}</span>
+                <span class="wx-day-desc" data-desc>{describeWeather(day.code)[0]}</span>
+                <span class="wx-day-temps"><strong data-max>{day.max}</strong>° / <span data-min>{day.min}</span>°</span>
+                <span class="wx-day-rain">بارش کا امکان <strong data-pop>{day.rainChance}</strong>%</span>
+              </li>
+            ))}
+          </ul>
+          <p class="credit">موسمی اعداد و شمار شہر کے لیے دیے گئے ہیں؛ اندرون شہر کی تنگ گلیوں میں دھوپ، ہوا اور محسوس ہونے والی گرمی مختلف ہو سکتی ہے۔ طویل المدتی اوسط کے لیے سرکاری موسمیاتی ادارہ دیکھیں۔</p>
+        ) : (
+          <p class="lede">موسم کی معلومات اس وقت دستیاب نہیں۔ روانگی سے پہلے سرکاری موسمیاتی ادارے کی تازہ پیش گوئی ضرور دیکھیں، تاکہ بارش، گرمی یا دھند کے مطابق منصوبہ بندی ہو سکے۔</p>
+        )}
+      </div>
+    </section>
+
+    <script is:inline>
+      // Keeps the prerendered weather panel current while the page stays static.
+      (function () {
+        var panel = document.getElementById('weather');
+        if (!panel || !window.fetch) return;
+
+        var FORECAST = 'https://api.open-meteo.com/v1/forecast?latitude=31.5821649&longitude=74.3264164&current=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,weather_code,wind_speed_10m&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max&forecast_days=7&timezone=Asia%2FKarachi';
+        var AIR = 'https://air-quality-api.open-meteo.com/v1/air-quality?latitude=31.5821649&longitude=74.3264164&current=us_aqi,pm2_5,pm10&timezone=Asia%2FKarachi';
+        var CODES = { 0: ['صاف آسمان', '☀️'], 1: ['عموماً صاف', '🌤️'], 2: ['جزوی بادل', '⛅'], 3: ['ابراہ', '☁️'], 45: ['دھند', '🌫️'], 48: ['جمی ہوئی دھند', '🌫️'], 51: ['ہلکی بوندا باندی', '🌦️'], 53: ['درمیانی بوندا باندی', '🌦️'], 55: ['گہری بوندا باندی', '🌧️'], 56: ['ہلکی برفانی بوندا باندی', '🌧️'], 57: ['گہری برفانی بوندا باندی', '🌧️'], 61: ['ہلکی بارش', '🌧️'], 63: ['درمیانی بارش', '🌧️'], 65: ['تیز بارش', '🌧️'], 66: ['ہلکی برفانی بارش', '🌨️'], 67: ['تیز برفانی بارش', '🌨️'], 71: ['ہلکی برفباری', '🌨️'], 73: ['درمیانی برفباری', '🌨️'], 75: ['شدید برفباری', '❄️'], 77: ['برف کے دانے', '🌨️'], 80: ['ہلکی جھڑی', '🌦️'], 81: ['درمیانی جھڑی', '🌧️'], 82: ['تیز جھڑی', '⛈️'], 85: ['ہلکی برفانی جھڑی', '🌨️'], 86: ['شدید برفانی جھڑی', '❄️'], 95: ['گرج چمک کے ساتھ بارش', '⛈️'], 96: ['گرج چمک اور اولے', '⛈️'], 99: ['شدید گرج چمک اور اولے', '⛈️'] };
+        var LEVELS = [[50, 'اچھا', 'good'], [100, 'درمیانہ', 'moderate'], [150, 'حساس افراد کے لیے غیر صحت بخش', 'sensitive'], [200, 'غیر صحت بخش', 'unhealthy'], [300, 'بہت غیر صحت بخش', 'very-unhealthy'], [1e9, 'خطرناک', 'hazardous']];
+        var WET = [51, 53, 55, 56, 57, 61, 63, 65, 66, 67, 80, 81, 82, 85, 86, 95, 96, 99];
+        var WEEKDAYS = ['اتوار', 'پیر', 'منگل', 'بدھ', 'جمعرات', 'جمعہ', 'ہفتہ'];
+        var MONTHS = ['جنوری', 'فروری', 'مارچ', 'اپریل', 'مئی', 'جون', 'جولائی', 'اگست', 'ستمبر', 'اکتوبر', 'نومبر', 'دسمبر'];
+        var CACHE_KEY = 'delhi-gate-weather';
+        var TTL = 15 * 60 * 1000;
+
+        function text(id, value) {
+          var el = document.getElementById(id);
+          if (el && value != null) el.textContent = value;
+        }
+        function round(value) {
+          return typeof value === 'number' && isFinite(value) ? Math.round(value) : value;
+        }
+        function describe(code) {
+          return CODES[Number(code)] || ['موسمی معلومات دستیاب نہیں', '🌡️'];
+        }
+        function level(value) {
+          for (var i = 0; i < LEVELS.length; i++) if (value <= LEVELS[i][0]) return LEVELS[i];
+          return LEVELS[LEVELS.length - 1];
+        }
+        function labelFor(iso) {
+          var parts = String(iso || '').split('-');
+          if (parts.length !== 3) return iso;
+          var d = new Date(Date.UTC(+parts[0], +parts[1] - 1, +parts[2]));
+          return WEEKDAYS[d.getUTCDay()] + ' ' + (+parts[2]) + ' ' + MONTHS[+parts[1] - 1];
+        }
+
+        function apply(data) {
+          if (!data || !data.current) return;
+          var current = data.current;
+          var daily = data.daily || {};
+          var todayRain = daily.precipitation_probability_max ? daily.precipitation_probability_max[0] : 0;
+          var todayCode = daily.weather_code ? daily.weather_code[0] : current.weather_code;
+          var todayMax = daily.temperature_2m_max ? daily.temperature_2m_max[0] : current.temperature_2m;
+
+          text('wx-temp', round(current.temperature_2m));
+          text('wx-feels', round(current.apparent_temperature));
+          text('wx-hum', round(current.relative_humidity_2m));
+          text('wx-wind', round(current.wind_speed_10m));
+          text('wx-precip', typeof current.precipitation === 'number' ? current.precipitation : 0);
+          var desc = describe(current.weather_code);
+          text('wx-glyph', desc[1]);
+          text('wx-desc', desc[0]);
+          if (current.time) text('wx-clock', 'تازہ کاری: ' + current.time.replace('T', ' · '));
+
+          var advice = todayRain >= 60 || (WET.indexOf(Number(todayCode)) > -1)
+            ? 'آج بارش کا امکان زیادہ ہے — چھتری یا بارش کوٹ ساتھ رکھیں اور پتھریلی گلیوں میں پھسلن کا خیال رکھیں۔'
+            : (round(todayMax) >= 38
+              ? 'آج گرمی کا دن ہے — پانی، ٹوپی اور دھوپ سے بچاؤ ساتھ رکھیں، واک صبح یا شام کو رکھیں۔'
+              : 'موسم عام طور پر پیدل واک کے لیے موزوں ہے — پھر بھی پانی، ٹوپی اور آرام دہ جوتے بہتر ہیں۔');
+          text('wx-advice', advice);
+
+          var cards = panel.querySelectorAll('.wx-day');
+          if (cards && daily.time) {
+            daily.time.forEach(function (iso, index) {
+              var card = panel.querySelector('.wx-day[data-day="' + index + '"]');
+              if (!card) return;
+              var info = describe(daily.weather_code ? daily.weather_code[index] : null);
+              var name = card.querySelector('.wx-day-name');
+              var glyph = card.querySelector('[data-glyph]');
+              var descr = card.querySelector('[data-desc]');
+              var max = card.querySelector('[data-max]');
+              var min = card.querySelector('[data-min]');
+              var pop = card.querySelector('[data-pop]');
+              if (name) name.textContent = labelFor(iso);
+              if (glyph) glyph.textContent = info[1];
+              if (descr) descr.textContent = info[0];
+              if (max) max.textContent = round(daily.temperature_2m_max ? daily.temperature_2m_max[index] : null);
+              if (min) min.textContent = round(daily.temperature_2m_min ? daily.temperature_2m_min[index] : null);
+              if (pop) pop.textContent = round(daily.precipitation_probability_max ? daily.precipitation_probability_max[index] : null);
+            });
+          }
+        }
+
+        function applyAir(data) {
+          if (!data || !data.current) return;
+          var current = data.current;
+          var value = round(current.us_aqi);
+          text('wx-aqi', value);
+          text('wx-pm25', round(current.pm2_5));
+          text('wx-pm10', round(current.pm10));
+          var info = level(current.us_aqi);
+          text('wx-aqi-label', info[1]);
+          var chip = panel.querySelector('.wx-air');
+          if (chip) {
+            chip.className = 'wx-air wx-air-' + info[2];
+            if (current.us_aqi > 150) {
+              var el = document.getElementById('wx-advice');
+              if (el) el.textContent = 'ہوا کا معیار خراب ہے — حساس افراد ماسک پہنیں اور باہر زیادہ دیر ٹھہرنے سے گریز کریں۔';
+            }
+          }
+        }
+
+        function readCache() {
+          try {
+            var raw = window.localStorage.getItem(CACHE_KEY);
+            if (!raw) return null;
+            var parsed = JSON.parse(raw);
+            return parsed && Date.now() - parsed.at < TTL ? parsed : null;
+          } catch (error) {
+            return null;
+          }
+        }
+
+        function refresh() {
+          var jobs = [
+            fetch(FORECAST).then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; }),
+            fetch(AIR).then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; })
+          ];
+          return Promise.all(jobs).then(function (results) {
+            if (!results[0] && !results[1]) return null;
+            if (results[0]) apply(results[0]);
+            if (results[1]) applyAir(results[1]);
+            try {
+              window.localStorage.setItem(CACHE_KEY, JSON.stringify({ at: Date.now(), data: results[0], air: results[1] }));
+            } catch (error) {}
+            return true;
+          });
+        }
+
+        var cached = readCache();
+        if (cached) {
+          apply(cached.data);
+          applyAir(cached.air);
+        } else {
+          refresh();
+        }
+        setInterval(function () {
+          if (document.visibilityState === 'visible') refresh();
+        }, TTL);
+      })();
+    </script>
+
+    <section id="seasons" style="background:#f7efe3">
+      <div class="container">
+        <div class="section-kicker">سہ ماہی منصوبہ بندی</div>
+        <h2>موسمی حکمتِ عملی: {ATTRACTION_SHORT_NAME} کب دیکھیں؟ (Seasonal Strategy)</h2>
+        <p class="lede">{CITY_NAME} کا موسم براعظمی نوعیت کا ہے: لمبی اور سردیوں میں دھند و فضائی آلودگی۔ {ATTRACTION_SHORT_NAME} کا دورہ بنیادی طور پر پیدل ہے، اس لیے درجہ حرارت، بارش اور ہوا کا معیار اس بات پر براہ راست اثر ڈالتے ہیں کہ واک کتنی خوشگوار ہوگی۔</p>
+        <div class="table-wrap">
+          <table class="data-table">
+            <caption>{CITY_NAME} میں {ATTRACTION_FULL_NAME} کی سہ ماہی رہنمائی</caption>
+            <thead>
+              <tr>
+                <th scope="col">سہ ماہی</th>
+                <th scope="col">موسم اور درجہ حرارت</th>
+                <th scope="col">بارش اور ہوا کا معیار</th>
+                <th scope="col">ہجوم اور روشنی</th>
+                <th scope="col">ساتھ کیا رکھیں</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <th scope="row">فروری تا اپریل<br /><span class="cell-note">بہار، سب سے بہترین وقت</span></th>
+                <td>دن میں عام طور پر 22 سے 32 ڈگری، شامیں معتدل اور خوشگوار</td>
+                <td>بارش کم اور وقفے وقفے سے؛ ہوا کا معیار عموماً قابلِ قبول</td>
+                <td>سیاحوں کی آمد زیادہ، صبح کی روشنی فوٹوگرافی کے لیے نرم</td>
+                <td>ہلکے سوتی کپڑے، ٹوپی، پانی، دھوپ کے چشمے</td>
+              </tr>
+              <tr>
+                <th scope="row">مئی تا جون<br /><span class="cell-note">شدید گرمی</span></th>
+                <td>دن کا زیادہ سے زیادہ درجہ حرارت عموماً 38 سے 45 ڈگری، دھوپ تیز</td>
+                <td>خشک موسم، گرد و غبار اور گاہے گاہے دھول بھری آندھی</td>
+                <td>دوپہر میں گلیاں نسبتاً خالی؛ روشنی سخت اور سائے تیز</td>
+                <td>اضافی پانی، نمک یا الیکٹرولائٹ، چھتری، صبح سویرے یا غروب کے بعد نکلنے کا منصوبہ</td>
+              </tr>
+              <tr>
+                <th scope="row">جولائی تا ستمبر<br /><span class="cell-note">مون سون</span></th>
+                <td>30 سے 38 ڈگری کے ساتھ نمِ زیادہ، پسینے سے تھکاوٹ جلدی</td>
+                <td>تیز مگر مختصر بارشیں، گرج چمک؛ گلیوں میں پانی جمع ہونا عام بات ہے</td>
+                <td>ہجوم کم، بادلوں کی وجہ سے روشنی پھیلی ہوئی اور ڈرامائی</td>
+                <td>چھتری یا بارش کوٹ، پھسلن سے بچنے والے جوتے، جلد سوکھنے والے کپڑے</td>
+              </tr>
+              <tr>
+                <th scope="row">اکتوبر تا جنوری<br /><span class="cell-note">خزاں، دھند اور اسماگ</span></th>
+                <td>اکتوبر میں 25 سے 32 ڈگری، دسمبر تا جنوری دن 15 سے 22 اور صبحیں 4 سے 8 ڈگری</td>
+                <td>دسمبر تا جنوری گہری دھند اور شہر کی فضائی آلودگی عروج پر، نظر کم اور کھانسی/سانس کی تکلیف ممکن</td>
+                <td>سردیوں کی صبح عموماً دھند میں چھپی رہتی ہے؛ دوپہر کی روشنی بہترین</td>
+                <td>ہلکی گرم تہہ دار جیکٹ، N95 جیسا ماسک، مارننگ واک کو دوپہر تک موخر کریں</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="grid grid-3">
+          <article class="card">
+            <h3>🌡️ موسمیات کا تجزیہ</h3>
+            <p>طویل المدتی موسمیاتی اوسط کے مطابق {CITY_NAME} کا گرم ترین دور مئی۔جون اور سرد ترین دور دسمبر۔جنوری ہے، جبکہ سال کا بیشتر بارش والا حصہ مون سون (جولائی تا ستمبر) میں آتا ہے۔ پیدل سیاحت کے لیے فروری تا اپریل اور اکتوبر کا مہینہ سب سے متوازن رہتا ہے۔</p>
+          </article>
+          <article class="card">
+            <h3>🌫️ ہوا کا معیار اور اسماگ</h3>
+            <p>سردیوں میں ہوا ساکت رہنے اور درجہ حرارت الٹنے (temperature inversion) کی وجہ سے شہر میں دھند اور آلودہ ذرات جمع ہو جاتے ہیں، جس سے PM2.5 نمایاں طور پر بڑھ جاتا ہے۔ حساس افراد — بچے، بزرگ، دمہ یا دل کے مریض — ان دنوں ماسک پہنیں اور اوپر دیے گئے ہوا کے معیار کے اشاریے کو ضرور دیکھیں۔</p>
+          </article>
+          <article class="card">
+            <h3>🏙️ شہری ماحول اور گلیوں کی نوعیت</h3>
+            <p>اندرون شہر کی گلیاں تنگ اور اینٹوں سے بنی ہیں، اس لیے گرمیوں میں دن کے وقت یہ تندور کی طرح گرم ہو سکتی ہیں جبکہ سردیوں میں ہوا کی آمدہ رفت کم ہونے پر دھواں اور دھند ٹھہر جاتے ہیں۔ بارش کے بعد پانی کی نکاسی محدود ہونے سے کچھ گلیوں میں پانی کھڑا رہتا ہے — اس لیے ہر موسم میں مقامی اطلاعات اور ہوا کے معیار پر نظر رکھنا ضروری ہے۔</p>
+          </article>
+        </div>
+        <p class="credit">خلاصہ: سب سے زیادہ آرام دہ تجربے کے لیے فروری تا اپریل یا اکتوبر منتخب کریں۔ گرمیوں میں صبح 7 سے 10 بجے اور سردیوں میں دوپہر 12 سے 3 بجے کا وقفہ بہترین رہتا ہے۔ رمضان اور علاقائی تہواروں میں بازار کے اوقات اور ہجوم کا نمونہ بدل جاتا ہے، اس لیے وقت کی منصوبہ بندی پہلے سے کریں۔</p>
+      </div>
+    </section>
+
     <section id="transport">
       <div class="container grid grid-2">
         <div>
-          <div class="section-kicker">تفصیلی آمدورفت</div><h2>یہاں کیسے پہنچیں</h2>
+          <div class="section-kicker">تفصیلی آمدورفت</div><h2>مقام اور کیسے پہنچیں: {CITY_NAME} میں {ATTRACTION_SHORT_NAME} (Location &amp; How to Visit)</h2>
+          <p>{ATTRACTION_FULL_NAME} ، {CITY_NAME}، {STATE_PROVINCE}، {COUNTRY_NAME} کے اندرونِ شہر میں اکبری منڈی کے قریب واقع ہے۔ پتہ: H8JG+PHM، Inside Delhi Gate، Akbari Mandi، Walled City of Lahore، {CITY_NAME} {POSTAL_CODE}، {COUNTRY_NAME}۔ نقشے میں منزل “{ATTRACTION_FULL_NAME}” یا متناسقات {LATITUDE}, {LONGITUDE} سے محفوظ کریں۔</p>
           <div class="route">
             <div class="step"><h3>رائیڈ ہیلنگ / ٹیکسی</h3><p>منزل میں “Delhi Gate Lahore, Circular Road” درج کریں۔ رش میں ڈرائیور آپ کو دروازے سے کچھ فاصلے پر اتار سکتا ہے۔</p></div>
             <div class="step"><h3>آٹو رکشہ</h3><p>پرانے شہر کے آخری حصے کے لیے سب سے عملی انتخاب۔ ڈرائیور سے “دہلی گیٹ، اندرون لاہور” کہیں۔</p></div>
@@ -134,14 +686,151 @@ const faqSchema = {
           </div>
         </div>
         <div class="photo-card arch" style="min-height:520px">
-          <img src="https://upload.wikimedia.org/wikipedia/commons/a/aa/Another_dome_view%2C_Wazir_Khan%27s_hammams.jpg" alt="شاہی حمام کا گنبد" loading="lazy" />
+          <img src="https://upload.wikimedia.org/wikipedia/commons/a/aa/Another_dome_view%2C_Wazir_Khan%27s_hammams.jpg" alt={`${NEARBY_LANDMARK_2} — ${ATTRACTION_SHORT_NAME}, ${CITY_NAME} کے قریب مغلیہ دور کے حمام کا گنبد`} loading="lazy" width="900" height="1200" />
           <div class="caption">شاہی حمام — تصویر: Kumail Hasan، CC BY-SA 4.0</div>
+        </div>
+      </div>
+
+      <div class="container" style="margin-top:2.2rem">
+        <h3>تفصیلی آمد و رفت: ہر صورت میں {ATTRACTION_SHORT_NAME} تک کیسے پہنچیں</h3>
+        <p class="lede">ذیل میں ہر ذریعہِ سفر کے لیے عام راستہ، تخمینی وقت اور عملی نکات دیے گئے ہیں۔ اصل وقت ٹریفک، موسم اور دن کے حساب سے بدل سکتا ہے، اس لیے روانگی سے پہلے نقشے پر راستہ ضرور چیک کریں۔</p>
+        <div class="grid grid-3">
+          <article class="card">
+            <h3>✈️ ہوائی اڈے سے</h3>
+            <p>{CITY_NAME} کا بین الاقوامی ہوائی اڈا شہر کے مشرق میں ہے اور {ATTRACTION_SHORT_NAME} تک عام حالات میں تقریباً 30 سے 60 منٹ کی ڈرائیو ہے (ٹریفک کے اوقات میں زیادہ وقت لگ سکتا ہے)۔ ہوائی اڈے پر دستیاب ٹیکسی یا مقامی رائیڈ ہیلنگ سروس استعمال کریں اور ڈراپ آف “Circular Road / Delhi Gate” پر لیں۔</p>
+          </article>
+          <article class="card">
+            <h3>🚆 ریلوے اسٹیشن سے</h3>
+            <p>لاہور جنکشن ریلوے اسٹیشن پرانے شہر کے قریب ہے۔ اسٹیشن سے رکشہ یا ٹیکسی کے ذریعے دہلی گیٹ تک کا سفر عموماً مختصر رہتا ہے؛ اگر سامان زیادہ ہو تو رکشے کے بجائے گاڑی بہتر انتخاب ہے۔</p>
+          </article>
+          <article class="card">
+            <h3>🚌 بس اور میٹرو سے</h3>
+            <p>شہر کی تیز رفتار بس سروس (BRT/اسپیڈو بسیں) اور میٹرو ٹرین کے کئی اسٹاپ سرکلر روڈ کے دائرے پر یا اس کے قریب پڑتے ہیں۔ نقشے پر اپنے راستے کا قریبی اسٹاپ تلاش کریں، وہاں سے مختصر رکشہ یا پیدل حصہ شامل کریں۔ صبح 8 تا 10 اور شام 5 تا 7 بجے بسیں زیادہ بھری ہوتی ہیں۔</p>
+          </article>
+          <article class="card">
+            <h3>🚕 ٹیکسی اور رائیڈ ہیلنگ</h3>
+            <p>مقامی رائیڈ ہیلنگ ایپ یا ٹیکسی سے “Inside Delhi Gate, Circular Road” تک جائیں؛ رش کے وقت ڈرائیور آپ کو دروازے سے کچھ فاصلے پر اتار سکتا ہے، جو بالکل معمول کی بات ہے۔ عام ٹیکسی لینے سے پہلے کرایہ طے کر لیں۔</p>
+          </article>
+          <article class="card">
+            <h3>🛺 رکشہ اور چنگ چی</h3>
+            <p>اندرون شہر کے آخری حصے کے لیے سب سے عملی ذریعہ۔ ٹریفک میں بھی یہ تنگ گلیوں تک پہنچ جاتے ہیں۔ سوار ہونے سے پہلے کرایہ طے کریں اور منزل “دہلی گیٹ، اندرون لاہور” بتائیں۔</p>
+          </article>
+          <article class="card">
+            <h3>🚗 اپنی گاڑی سے</h3>
+            <p>گاڑی اندرون شہر کے بازار میں لے جانا عملی نہیں۔ سرکلر روڈ کے اطراف قانونی پارکنگ یا ڈراپ آف استعمال کریں اور آخری حصہ پیدل طے کریں۔ قیمتی سامان گاڑی میں نظر آنے والی جگہ پر نہ چھوڑیں اور اندھیرے سے پہلے واپسی کا منصوبہ بنائیں۔</p>
+          </article>
+        </div>
+        <p class="map-links">
+          <a class="btn" href={MAPS_SHARE_URL} target="_blank" rel="noopener noreferrer">گوگل میپس پر مقام دیکھیں ↗</a>
+          <a class="btn ghost" href={MAPS_DIRECTIONS_URL} target="_blank" rel="noopener noreferrer">ڈائریکشنز ↗</a>
+        </p>
+        <p class="credit">نوٹ: یہاں دیے گئے اوقات اور فاصلے عمومی تخمینے ہیں؛ ٹریفک، موسم اور تعطیلات کے مطابق فرق پڑ سکتا ہے۔ ♿ نقل و حرکت میں دشواری والے زائرین کے لیے بہترین نقطہِ آغاز دروازے کے باہر والا ڈراپ آف ہے، کیونکہ اندر کی گلیوں میں فرش ہموار نہیں اور کچھ مقامات پر سیڑھیاں ہیں۔</p>
+      </div>
+    </section>
+
+    <section id="services" style="background:#fff9ef">
+      <div class="container">
+        <div class="section-kicker">زائرین کی سہولیات</div>
+        <h2>زائرین کی خدمات اور گرد و نواح کی سہولیات (Visitor Services &amp; Facilities)</h2>
+        <p class="lede">یہ رہنمائی صرف <strong>سہولت کی اقسام</strong> بیان کرتی ہے، کسی کاروباری ادارے کی سفارش نہیں۔ {ATTRACTION_SHORT_NAME} کے گرد سہولیات بنیادی نوعیت کی ہیں: اندرون شہر میں چھوٹی دکانیں اور باہر کی طرف بڑی سہولیات۔</p>
+        <div class="grid grid-3">
+          <article class="card">
+            <h3>🚻 صفائی اور بیت الخلا</h3>
+            <p>سیاحتی مراکز اور بڑے تاریخی مقامات — جیسے {NEARBY_LANDMARK_2} اور {NEARBY_LANDMARK_1} کے احاطے سے متصل علاقے — میں عام طور پر عوامی بیت الخلا موجود ہوتے ہیں۔ مساجد میں وضو اور صفائی کی جگہ دستیاب ہوتی ہے، اور کیفے یا ریستوران بھی استعمال کیے جا سکتے ہیں۔ ٹشو، ہینڈ سینیٹائزر اور کاغذ ساتھ رکھنا زیادہ محفوظ رہتا ہے۔</p>
+          </article>
+          <article class="card">
+            <h3>🅿️ پارکنگ کی اقسام</h3>
+            <p>سرکلر روڈ کے کنارے قانونی سڑک کنارے پارکنگ، ہوٹل اور شاپنگ ایریاز کی فیس والی پارکنگ، اور بڑے کمرشل پلازوں کی پارکنگ دستیاب ہوتی ہے۔ رات میں واپسی سے قبل گاڑی کا معائنہ کریں اور ٹکٹ یا رسید ضرور لیں۔</p>
+          </article>
+          <article class="card">
+            <h3>🍽️ کھانے پینے کی اقسام</h3>
+            <p>اندرون شہر میں روایتی ناشتے کی دکانیں، بیکری، چائے خانے، مٹھائی کی دکانیں اور سٹریٹ فوڈ اسٹالز عام ہیں۔ بیٹھ کر کھانے کے لیے {ATTRACTION_SHORT_NAME} کے باہر کی طرف کچھ ریستوران اور چھت والے کیفے ملتے ہیں۔ زیادہ مصروف اور تازہ پکوان والی جگہ ترجیح دیں۔</p>
+          </article>
+          <article class="card">
+            <h3>🛏️ قیام کی اقسام</h3>
+            <p>اندرون شہر میں محدود مگر منفرد ہیریٹیج گیسٹ ہاؤسز موجود ہیں جو پیدل سیاحت کے لیے بہترین ہیں۔ زیادہ سہولیات اور بڑے کمروں کے لیے شہر کے مرکزی ہوٹل ایریاز (جیسے مال روڈ یا گلبرگ کی جانب) بہتر ہیں، جبکہ ریلوے اسٹیشن کے قریب بجٹ ہوٹل ملتے ہیں۔ دیر رات واپسی والے زائرین کے لیے باہر کی پارکنگ والا ہوٹل زیادہ عملی ہے۔</p>
+          </article>
+          <article class="card">
+            <h3>🛒 روزمرہ خریداری</h3>
+            <p>جنرل اسٹور، دواخانے، بیکری، پانی کی بوتلیں، دستکاری اور سووینئر کی چھوٹی دکانیں۔ ہیریٹیج واک کے دوران ریڑھی اور چھوٹے اسٹال والے بیوپاریوں سے چھوٹی چیزیں مل سکتی ہیں؛ لین دین سے پہلے قیمت تصدیق کر لینا بہتر ہے۔</p>
+          </article>
+          <article class="card">
+            <h3>⛽ ایندھن اور چارجنگ</h3>
+            <p>فیول اسٹیشن اندرون شہر کی بجائے سرکلر روڈ اور بڑی سڑکوں کے کنارے ملتے ہیں، اس لیے داخل ہونے سے پہلے ایندھن پورا کر لیں۔ برقی گاڑیوں کے لیے عوامی چارجنگ پوائنٹس محدود ہیں؛ ہوٹل یا بڑے کمرشل کمپلیکس سے چارجنگ کی دستیابی پہلے سے پوچھ لیں۔ موبائل کے لیے پاور بینک ساتھ رکھیں۔</p>
+          </article>
+          <article class="card">
+            <h3>🏧 بینکنگ اور ادائیگی</h3>
+            <p>اے ٹی ایم اور بینک برانچز بڑی سڑکوں اور مارکیٹوں کے قریب ہیں۔ چھوٹے اسٹالز، رکشے اور مقامی دکانیں اکثر نقد ادائیگی ترجیح دیتے ہیں، اس لیے کیش ساتھ رکھیں اور بڑی نوٹوں کے ساتھ چھوٹی رقم بھی ہو۔</p>
+          </article>
+          <article class="card">
+            <h3>🕌 عبادت اور نماز</h3>
+            <p>راستے میں کئی مساجد ہیں، جن میں سے کچھ تاریخی اہمیت رکھتی ہیں۔ نماز کے اوقات میں قریبی مسجد استعمال کی جا سکتی ہے؛ عبادت گاہوں میں باوقار لباس، خاموشی اور صفائی کا خیال رکھیں۔</p>
+          </article>
+          <article class="card">
+            <h3>🩺 طبی امداد اور حفاظت</h3>
+            <p>دواخانے اور چھوٹی کلینکیں قریب موجود ہیں؛ بڑے ہسپتال شہر کے مرکزی علاقوں میں ہیں۔ ہنگامی صورت میں مقامی ایمرجنسی سروس (ریسکیو 1122) سے رابطہ کیا جا سکتا ہے۔ گرمی کے دنوں میں وقفے وقفے سے پانی پئیں اور ہجوم میں بچوں کا ہاتھ تھامیں۔</p>
+          </article>
+          <article class="card">
+            <h3>🧳 سامان اور اسٹوریج</h3>
+            <p>اندرون شہر میں سامان رکھوانے کی کوئی سرکاری لاکر سہولت نہیں۔ ضرورت کی چیزیں رکھیں اور بڑا سامان ہوٹل یا گاڑی میں چھوڑیں، کیونکہ تنگ گلیوں میں بڑے بیگ لے کر چلنا مشکل ہوتا ہے۔</p>
+          </article>
+          <article class="card">
+            <h3>📶 رابطہ کاری اور نقشہ</h3>
+            <p>موبائل نیٹ ورک عام طور پر دستیاب ہے مگر گہری گلیوں میں سگنل کمزور ہو سکتا ہے۔ پہنچنے سے پہلے آف لائن نقشہ محفوظ کر لیں اور ملاقات کی جگہ دروازے کے باہر طے کریں۔</p>
+          </article>
+          <article class="card">
+            <h3>♿ نقل و حرکت اور آرام</h3>
+            <p>فرش ہموار نہیں اور کچھ حصوں میں سیڑھیاں ہیں، اس لیے وہیل چیئر یا کم محنت والے زائرین کے لیے بہتر ہے کہ وہ ڈراپ آف کے قریب والے حصے اور بیٹھنے کی جگہوں والے مقامات تک محدود رہیں اور ساتھی ساتھ ہو۔</p>
+          </article>
+        </div>
+        <p class="credit">یہ سہولیات کی نوعیت بیان کرنے والی غیر تجارتی معلومات ہے؛ اوقات، دستیابی اور فیس وقت کے ساتھ بدل سکتی ہے، اس لیے ضرورت پڑنے پر موجودہ مقامی اطلاعات سے تصدیق کریں۔</p>
+      </div>
+    </section>
+
+    <section id="history">
+      <div class="container">
+        <div class="section-kicker">تاریخ و اہمیت</div>
+        <h2>تاریخ اور اہمیت: {ATTRACTION_FULL_NAME} (History &amp; Significance)</h2>
+        <div class="grid grid-2">
+          <div>
+            <p>دہلی گیٹ لاہور کا نام اسی راستے سے آیا ہے جو یہاں سے دہلی کی سمت جاتا تھا۔ مغلیہ دور میں تعمیر ہونے والی لاہور کی فصیل کے دروازوں میں سے ایک ہونے کے ناطے یہ مشرقی داخلہ تھا، اور قلعہ لاہور سے دہلی تک جانے والے شاہی راستے کا رسمی آغاز اسی دہلیز پر ہوتا تھا۔</p>
+            <p>صدیوں کے دوران دروازے کی مرمت اور تعمیرِ نو ہوتی رہی، مگر اس کی شہری حیثیت برقرار رہی: یہاں سے اندر جانے والی گزرگاہ پر تاجر، دستکار، مسافر اور زائرین ایک ہی دھارے میں چلتے رہے۔ اسی لیے دہلی گیٹ کو محض ایک بند یادگار کے بجائے ایک زندہ دروازہ کہا جاتا ہے۔</p>
+            <p>آج Walled City of Lahore Authority (WCLA) کے تحت شاہی گزرگاہ کے بحالی منصوبوں نے دہلی گیٹ سے {NEARBY_LANDMARK_1} اور {NEARBY_LANDMARK_2} تک کا پیدل راستہ بحال کر دیا ہے، جس سے یہ علاقہ ثقافتی سیاحت کا مرکز بن گیا ہے۔</p>
+            <h3>تعمیراتی جھلک</h3>
+            <p>لاہور کی مغلیہ فصیل چنئی اور پختہ اینٹوں سے تعمیر کی گئی تھی، اور اس کے دروازے محض راستہ نہیں بلکہ ایک مکمل دفاعی و انتظامی اکائی تھے — درمیان میں بلند محرابی گزرگاہ، دونوں جانب پہرے اور محصول کے لیے کمرے، اوپر روشنی اور ہوا کے راستے، اور رات میں بند ہونے والے بھاری لکڑی کے کواڑ۔ دہلی گیٹ کی یہی دوہری شخصیت — دفاعی دروازہ اور شہری چوکھٹ — آج بھی اس کی سب سے بڑی پہچان ہے۔</p>
+            <p>فصیل بند شہر کے دروازوں کا سلسلہ صدیوں میں تبدیل ہوتا رہا: مغلیہ عروج کے بعد سکھ دور میں مرمت اور تعمیرِ نو ہوئی، اور برطانوی دور میں شہر کی فصیل کے بیشتر حصے ہٹا دیے گئے، مگر چند دروازے — جن میں دہلی گیٹ شامل ہے — شہر کی یادداشت کا حصہ بن کر باقی رہے۔ اسی لیے آج کا دہلی گیٹ ایک ہمہ گیر تاریخی پرت ہے: مغل منصوبہ بندی، بعد کے ادوار کی مرمت اور جدید بحالی ایک ہی جگہ نظر آتے ہیں۔</p>
+            <h3>ایک دروازے کی کہانی اور مقامی روایات</h3>
+            <p>اندازہ لگائیں کہ صدیوں پہلے ایک قافلہ صبح سویرے اسی دہلیز کے سامنے رکتا تھا: باہر سے آنے والے مسافر کے لیے دروازہ شہر کا اعلان تھا، اور شہر سے نکلنے والوں کے لیے دہلی کی سمت جانے والے لمبے سفر کا آغاز۔ اندر داخل ہوتے ہی شاہی گزرگاہ شروع ہو جاتی تھی جہاں قافلے، دستکار اور خریدار ایک ہی دھارے میں مل جاتے تھے۔</p>
+            <p>مقامی روایات میں دہلی گیٹ کا ذکر اسی “حد” کے طور پر ملتا ہے جہاں سے شہر کا اندرونی حصہ شروع ہوتا ہے: اکبری منڈی کی تجارت، مسالوں کی خوشبو، مصالحہ جات کی گانٹھیں، {NEARBY_LANDMARK_1} کی نماز کی آواز اور بازار کی مسلسل چہل پہل — یہ سب اسی ایک دروازے کے گرد جمع ہو جاتے ہیں۔ یہ روایتی مناظر آج بھی زندہ ہیں، اسی لیے زائرین کا کہنا ہے کہ دہلی گیٹ عجائب گھر کی نمائش نہیں بلکہ جاری زندگی کا حصہ ہے۔</p>
+            <div class="card">
+              <h3>تاریخی ادوار کی جھلکیاں</h3>
+              <div class="facts">
+                <div><span>مغلیہ دور</span><strong>فصیل بند شہر کی بنیاد اور دہلی کی سمت جانے والے شاہی راستے پر مشرقی دروازہ</strong></div>
+                <div><span>18ویں صدی</span><strong>لڑائیوں اور مرمت کے ادوار؛ دروازے کی حفاظتی حیثیت برقرار</strong></div>
+                <div><span>سکھ دور</span><strong>تعمیرِ نو، رنگ و روغن اور لکڑی کے عناصر میں تبدیلیاں</strong></div>
+                <div><span>برطانوی دور</span><strong>فصیل کے بیشتر حصے ہٹائے گئے، دروازے شہری نشان کے طور پر باقی</strong></div>
+                <div><span>جدید دور</span><strong>WCLA کی بحالی، شاہی گزرگاہ کا پیدل منصوبہ اور سیاحتی سہولیات</strong></div>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <h3>اہم نکات</h3>
+            <div class="facts">
+              <div><span>قسم</span><strong>تاریخی یادگار · {REVIEW_CATEGORY_EN}</strong></div>
+              <div><span>وابستگی</span><strong>Walled City of Lahore فصیل کا مشرقی دروازہ</strong></div>
+              <div><span>پتہ</span><strong>H8JG+PHM, Inside Delhi Gate, Akbari Mandi</strong></div>
+              <div><span>متناسقات</span><strong>{LATITUDE}, {LONGITUDE}</strong></div>
+              <div><span>رسائی</span><strong>عام گزرگاہ مفت · 24 گھنٹے</strong></div>
+              <div><span>مزید پڑھیں</span><strong><a href={WIKIPEDIA_URL} target="_blank" rel="noopener noreferrer">Wikipedia — {ATTRACTION_FULL_NAME}</a></strong></div>
+            </div>
+          </div>
         </div>
       </div>
     </section>
 
     <section id="nearby" style="background:#fff9ef">
-      <div class="container"><div class="section-kicker">پیدل دریافت کریں</div><h2>قریب کے تاریخی مقامات</h2>
+      <div class="container"><div class="section-kicker">پیدل دریافت کریں</div><h2>{ATTRACTION_SHORT_NAME} کے آس پاس کے مقامات (Landmarks &amp; Attractions Around {ATTRACTION_SHORT_NAME})</h2>
+        <p class="lede">{ATTRACTION_FULL_NAME} کا دورہ کرتے ہوئے زائرین آسانی سے ارد گرد کے تاریخی مقامات اور دلچسپی کے مقامات دیکھ سکتے ہیں، جن میں <strong>{NEARBY_LANDMARK_1}</strong> اور <strong>{NEARBY_LANDMARK_2}</strong> نمایاں ہیں۔ یہ سب اسی فصیل بند شہر کے اندر پیدل فاصلے پر ہیں۔</p>
         <div class="grid grid-3">
           <article class="card"><h3>شاہی حمام</h3><p>دہلی گیٹ سے چند قدم اندر۔ مغلیہ دور کا واحد باقی ماندہ عوامی حمام، جس میں فریسکو اور زیرِفرش حرارتی نظام کے آثار دیکھے جا سکتے ہیں۔</p></article>
           <article class="card"><h3>وزیر خان مسجد</h3><p>تقریباً 200 میٹر اندر شاہی گزرگاہ پر۔ کاشی کاری، خطاطی اور رنگین نقش و نگار کے لیے لاہور کی نمایاں مغلیہ مسجد۔</p></article>
@@ -149,6 +838,56 @@ const faqSchema = {
           <article class="card"><h3>چوک وزیر خان</h3><p>مسجد کے سامنے تاریخی شہری چوک؛ آس پاس کرافٹ بازار، حویلیاں اور پرانے تجارتی راستے ہیں۔</p></article>
           <article class="card"><h3>اکبری منڈی</h3><p>دہلی گیٹ کے قریب قدیم تھوک بازار، جہاں مصالحوں اور اناج کی تجارت نے علاقے کی شناخت بنائی۔</p></article>
           <article class="card"><h3>قلعہ لاہور و بادشاہی مسجد</h3><p>اسی تاریخی شہر کے مغربی سرے پر۔ دہلی گیٹ سے مکمل شاہی گزرگاہ واک کی قدرتی منزلیں، مگر فاصلہ نسبتاً زیادہ ہے۔</p></article>
+        </div>
+      </div>
+    </section>
+
+    <section id="routes">
+      <div class="container">
+        <div class="section-kicker">تجویز کردہ راستے</div>
+        <h2>{ATTRACTION_SHORT_NAME} سے آدھا دن یا پورا دن: تجویز کردہ سیاحتی راستے (Recommended Itineraries)</h2>
+        <p class="lede">یہ راستے {ATTRACTION_FULL_NAME} سے شروع ہوتے ہیں اور پیدل فاصلے پر موجود مقامات کو جوڑتے ہیں۔ اوقات تخمینی ہیں — رش، موسم اور نماز کے اوقات کے مطابق ان میں تبدیلی کریں۔</p>
+        <div class="grid grid-2">
+          <article class="card">
+            <h3>آدھے دن کا راستہ · تقریباً 2.5 تا 3 گھنٹے</h3>
+            <div class="route">
+              <div class="step"><h4>① {ATTRACTION_SHORT_NAME} — آغاز</h4><p>15 منٹ: دروازے کے باہر سے حجم اور اینٹوں کی محراب کا نظارہ، پھر اندر داخل ہوں۔</p></div>
+              <div class="step"><h4>② {NEARBY_LANDMARK_2} (شاہی حمام)</h4><p>45 منٹ: مغلیہ حمام کی تعمیر، فریسکو اور زیرِفرش حرارتی نظام کی باقیات۔</p></div>
+              <div class="step"><h4>③ چوک وزیر خان اور {NEARBY_LANDMARK_1}</h4><p>45 منٹ: کاشی کاری، خطاطی اور صحن کی تفصیلات پر وقت دیں۔</p></div>
+              <div class="step"><h4>④ گلی سرجن سنگھ اور اکبری منڈی</h4><p>30 منٹ: لکڑی کے جھروکے، دستکاری اور پرانے تجارتی راستے کا ماحول۔</p></div>
+              <div class="step"><h4>⑤ اختتام: چائے اور واپسی</h4><p>30 منٹ: قریبی چائے خانے یا بیکری کی قسم میں وقفہ، پھر دروازے کی طرف واپسی۔</p></div>
+            </div>
+          </article>
+          <article class="card">
+            <h3>پورے دن کا راستہ · تقریباً 6 تا 7 گھنٹے</h3>
+            <div class="route">
+              <div class="step"><h4>① صبح 8:00 — {ATTRACTION_SHORT_NAME}</h4><p>دروازے کے باہر سے نرم صبح کی روشنی میں آغاز اور اندرونی بازار میں داخلہ۔</p></div>
+              <div class="step"><h4>② 8:30 — {NEARBY_LANDMARK_2}</h4><p>ہجوم سے پہلے حمام کے اندرونی حصے دیکھنے کا بہترین وقت۔</p></div>
+              <div class="step"><h4>③ 10:00 — {NEARBY_LANDMARK_1} اور شاہی گزرگاہ</h4><p>مسجد، چوک اور بحال شدہ گزرگاہ پر آہستہ واک۔</p></div>
+              <div class="step"><h4>④ 12:30 — دوپہر کا کھانا</h4><p>قریبی روایتی کھانے یا کیفے کی قسم میں وقفہ اور پانی کی تکمیل۔</p></div>
+              <div class="step"><h4>⑤ 14:00 — قلعہ لاہور کی سمت</h4><p>مکمل شاہی گزرگاہ یا رکشے سے مختصر سفر؛ قلعے کی فصیل اور عالمگیری دروازہ۔</p></div>
+              <div class="step"><h4>⑥ 15:30 — بادشاہی مسجد اور حضوری باغ</h4><p>صحن، پتھر کا کام اور تاریخی حصار کا وسیع نظارہ۔</p></div>
+              <div class="step"><h4>⑦ 17:30 — غروب اور واپسی</h4><p>غروب کے بعد ارد گرد کے فوڈ ایریا میں ہلکا ناشتہ اور واپسی۔</p></div>
+            </div>
+          </article>
+        </div>
+        <h3>اپنے گروپ کے مطابق راستہ چنیں</h3>
+        <div class="grid grid-3">
+          <article class="card">
+            <h3>👨‍👩‍👧‍👦 خاندان اور بچوں کے ساتھ · تقریباً 2 گھنٹے</h3>
+            <p><strong>ترتیب:</strong> دروازہ → {NEARBY_LANDMARK_2} کا صحن → {NEARBY_LANDMARK_1} کا صحن → چائے کا وقفہ → واپسی۔</p>
+            <p><strong>نکات:</strong> صبح شروع کریں، ہر 30 منٹ بعد چھوٹا وقفہ لیں اور بچوں کا ہاتھ تھامیں۔ تنگ اور مصروف گلیوں میں اسٹرولر مشکل ہے، اس لیے کیریئر بہتر ہے۔ جمعہ کے قریب اور غروب کے وقت ہجوم زیادہ ہوتا ہے۔</p>
+          </article>
+          <article class="card">
+            <h3>📷 فوٹوگرافی اور فنِ تعمیر · تقریباً 3 گھنٹے</h3>
+            <p><strong>ترتیب:</strong> دروازے کا بیرونی نظارہ (طلوع/صبح) → اینٹوں کی تفصیلات → {NEARBY_LANDMARK_2} کے محراب → {NEARBY_LANDMARK_1} کی کاشی کاری → نیلے وقت (blue hour) میں صحن → واپسی۔</p>
+            <p><strong>نکات:</strong> دوپہر کی سخت روشنی سے بچیں، صبح اور نیلے وقت کی نرم روشنی میں نمونے واضح آتے ہیں۔ تجارتی شوٹ اور ٹرائی پاڈ کے لیے پہلے سے اجازت لیں اور لوگوں کی تصویر سے پہلے پوچھیں۔</p>
+          </article>
+          <article class="card">
+            <h3>♿ کم محنت اور بزرگ زائرین · تقریباً 1.5 گھنٹے</h3>
+            <p><strong>ترتیب:</strong> دروازے کے باہر ڈراپ آف → دروازے کی سطحی سیر → قریبی صحن والے مقام پر بیٹھنے کا وقفہ → رکشہ سے واپسی۔</p>
+            <p><strong>نکات:</strong> فرش ہموار نہیں اور کچھ حصوں میں سیڑھیاں ہیں، اس لیے راستہ مختصر رکھیں، ساتھی ضرور ہو، اور دوپہر کی گرمی یا شام کی بھیڑ سے بچیں۔ واپسی کے لیے رکشہ پہلے سے طے کر لیں۔</p>
+          </article>
         </div>
       </div>
     </section>
@@ -165,16 +904,115 @@ const faqSchema = {
       </div>
     </section>
 
+    <section id="responsibility" style="background:#f7efe3">
+      <div class="container">
+        <div class="section-kicker">سائنس اور ذمہ داری</div>
+        <h2>تعمیراتی سائنس اور زائرین کی ذمہ داریاں (Science &amp; Visitor Responsibility)</h2>
+        <p class="lede">{ATTRACTION_SHORT_NAME} اور شاہی گزرگاہ کی عمارتیں چنئی اور اینٹوں سے بنی ہیں، جن کی سب سے بڑی دشمن نمی، نمک اور ارتعاش ہے۔ یہ سمجھنا ضروری ہے کہ زائرین کی چھوٹی سی عادت — دیوار کو ہاتھ لگانا، پانی کا چھڑکاؤ، رگڑ یا دیوار پر کھڑا ہونا — صدیوں پرانی سطح کو نقصان پہنچا سکتی ہے۔</p>
+        <div class="grid grid-2">
+          <article class="card">
+            <h3>🔬 تعمیراتی مواد کیوں کمزور ہے</h3>
+            <p>چونے کی سیمنٹ اور پکی اینٹ پانی جذب کرتے ہیں۔ جب نمی بخارات بن کر اوپر آتی ہے تو اندر موجود نمکیات سطح پر آ کر پھول جاتے ہیں (نمک کا پھولنا)، جس سے ٹائل اور پلاستر کے ذرات جھڑنے لگتے ہیں۔ بارش یا سیپیج زیادہ ہو تو دیواریں کمزور ہو جاتی ہیں، اور مسلسل ارتعاش یا مسلسل چھونے سے فریسکو اور کاشی کاری کی سطحیں گھس جاتی ہیں۔</p>
+            <p>اسی لیے حمام کے فریسکو اور {NEARBY_LANDMARK_1} کی ٹائل کاری کے قریب مخصوص فاصلہ رکھا جاتا ہے: انسانوں کی تعداد، پسینے میں موجود نمک اور ہاتھوں کی رگڑ سب مل کر سطح کی عمر گھٹاتے ہیں۔</p>
+          </article>
+          <article class="card">
+            <h3>✅ زائرین کے لیے عملی اصول</h3>
+            <ul class="src-list">
+              <li>دیواروں، فریسکو اور ٹائل کاری کو ہاتھ نہ لگائیں اور نہ ان پر ٹیک لگائیں۔</li>
+              <li>دیواروں پر لکھنا، نقش بنانا یا کوئی نشان چھوڑنا ممنوع ہے۔</li>
+              <li>تاریخی ڈھانچوں پر نہ چڑھیں اور نہ بیٹھیں؛ ٹرائی پاڈ یا ڈرون کے لیے پہلے اجازت لیں۔</li>
+              <li>تنگ گلیوں میں راستہ بند نہ کریں؛ مقامی لوگوں کے روزمرہ راستے کا احترام کریں۔</li>
+              <li>کوڑا مقررہ جگہ پر ڈالیں اور پانی کی بوتلیں ساتھ لے جائیں۔</li>
+              <li>عبادت گاہوں میں باوقار لباس، خاموشی اور نماز کے اوقات کا احترام کریں۔</li>
+              <li>لوگوں کی تصویر لینے سے پہلے اجازت لیں، دکان دار سے قیمت پہلے تصدیق کریں۔</li>
+              <li>مقامی دستکاری خرید کر اور مقامی رہنما سروسز استعمال کر کے تحفظ کی معاشی مدد کریں۔</li>
+            </ul>
+          </article>
+        </div>
+        <p class="credit">یہ سائٹ ایک غیر منافع بخش تعلیمی وسیلہ ہے: ہم کسی کاروبار کی سفارش نہیں کرتے، ٹکٹ یا فیس وصول نہیں کرتے اور مقامی اداروں کی ترتیب دی گئی ہدایات ہمیشہ اولیت رکھتی ہیں۔</p>
+      </div>
+    </section>
+
+    <section id="reviews">
+      <div class="container">
+        <div class="section-kicker">گوگل میپس کے صارف جائزے</div>
+        <h2>زائرین کی درجہ بندی اور جائزے (Google Maps Reviews)</h2>
+        <div class="review-panel">
+          <div class="review-score">
+            <div class="score">★ {RATING_VALUE}</div>
+            <div class="score-out-of">{RATING_MAX} میں سے · {RATING_COUNT} جائزے</div>
+            <div class="stars" aria-hidden="true">★★★★★</div>
+            <div class="score-cat">{REVIEW_CATEGORY_UR} · {REVIEW_CATEGORY_EN}</div>
+          </div>
+          <div class="review-meta">
+            <p>درجہ بندی اور جائزے گوگل میپس کے صارف جائزوں سے لیے گئے ہیں — پڑھنے کے لیے گوگل میپس پر جا سکتے ہیں۔</p>
+            <p class="review-source-line">درجہ بندی اور جائزوں کی تعداد گوگل میپس (Google Maps) کے صارف جائزوں سے ہم آہنگ کی گئی ہے · {REVIEW_SYNC_UR} · <a href={MAPS_SHARE_URL} target="_blank" rel="noopener noreferrer">گوگل میپس پر تمام جائزے دیکھیں↗</a></p>
+            <p class="map-links"><a class="btn" href={MAPS_SHARE_URL} target="_blank" rel="noopener noreferrer">گوگل میپس پر تمام جائزے دیکھیں ↗</a></p>
+            <p class="credit">گوگل میپس کے صارف جائزوں سے ہم آہنگ؛ ہم آہنگی کا وقت: {REVIEW_SYNC_UR} ({REVIEW_SYNC_EN})۔ کاپی رائٹ اصل جائزہ نگاروں اور گوگل میپس (Google Maps) کا ہے۔</p>
+            <p class="credit">نوٹ: یہ ویب سائٹ گوگل یا Google Maps کی آفیشل ویب سائٹ نہیں۔ جائزے صرف اس صفحے پر نمائش کے لیے دکھائے گئے ہیں اور گوگل کی شرائط کے تابع ہیں۔</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <section id="map" style="background:#5e241e0c">
-      <div class="container"><div class="section-kicker">مقام</div><h2>دہلی گیٹ کا نقشہ</h2>
-        <div class="map-wrap"><iframe title="دہلی گیٹ لاہور نقشہ" loading="lazy" referrerpolicy="no-referrer-when-downgrade" src="https://www.google.com/maps?q=31.5821649,74.3264164&hl=ur&z=17&output=embed"></iframe></div>
-        <p>پتہ: H8JG+PHM، Inside Delhi Gate، Akbari Mandi، Walled City of Lahore، Lahore 54000، Pakistan</p>
+      <div class="container"><div class="section-kicker">مقام</div><h2>{ATTRACTION_SHORT_NAME} کا نقشہ (Location Map)</h2>
+        <div class="map-wrap"><iframe title={`${ATTRACTION_FULL_NAME} — نقشہ`} src={MAPS_EMBED_SRC} width="100%" height="450" style="border:0;" allowfullscreen loading="lazy" referrerpolicy="strict-origin-when-cross-origin"></iframe></div>
+        <p>پتہ: H8JG+PHM، Inside Delhi Gate، Akbari Mandi، Walled City of Lahore، {CITY_NAME} {POSTAL_CODE}، {COUNTRY_NAME} · متناسقات {LATITUDE}, {LONGITUDE}</p>
+        <p class="map-links">
+          <a class="btn" href={MAPS_SHARE_URL} target="_blank" rel="noopener noreferrer">گوگل میپس پر مقام دیکھیں ↗</a>
+          <a class="btn ghost" href={MAPS_DIRECTIONS_URL} target="_blank" rel="noopener noreferrer">ڈائریکشنز ↗</a>
+        </p>
+        <p class="credit">سرکاری تازہ کاریوں اور علاقائی سیاحت کی معلومات کے لیے دیکھیں <a href={GOVT_TOURISM_URL} target="_blank" rel="noopener noreferrer">{COUNTRY_NAME} / {STATE_PROVINCE} سرکاری ٹورازم پورٹل — Walled City of Lahore Authority (WCLA)</a>۔</p>
       </div>
     </section>
 
     <section id="faq" class="faq">
-      <div class="container"><div class="section-kicker">FAQ</div><h2>عام سوالات</h2>
+      <div class="container"><div class="section-kicker">FAQ</div><h2>عام سوالات (FAQ)</h2>
         {faq.map(([q,a]) => <details><summary>{q}</summary><p>{a}</p></details>)}
+      </div>
+    </section>
+
+    <section id="sources">
+      <div class="container">
+        <div class="section-kicker">ذرائع اور حوالہ جات</div>
+        <h2>ذرائع، انتساب اور تازہ کاری (Sources &amp; Attribution)</h2>
+        <div class="grid grid-2">
+          <div class="card">
+            <h3>جائزے · تازہ کاری {REVIEW_SYNC_UR} ({REVIEW_SYNC_EN})</h3>
+            <p>درجہ بندی <strong>{RATING_VALUE}</strong> اور <strong>{RATING_COUNT}</strong> جائزوں کا ڈیٹا گوگل میپس کے صارف جائزوں سے ہم آہنگ کیا گیا ہے؛ ہم آہنگی کا وقت {REVIEW_SYNC_UR}۔ کاپی رائٹ اصل جائزہ نگاروں اور گوگل میپس (Google Maps) کا ہے۔ <a href={MAPS_SHARE_URL} target="_blank" rel="noopener noreferrer">گوگل میپس پر تمام جائزے دیکھیں ↗</a></p>
+            <p class="credit">یہ جائزے صرف اسی صفحے پر نمائش کے لیے شامل کیے گئے ہیں اور کسی اسٹرکچرڈ ڈیٹا (JSON-LD) میں شامل نہیں کیے گئے۔</p>
+          </div>
+          <div class="card">
+            <h3>تصاویر</h3>
+            <p>اس صفحے کی تصاویر Wikimedia Commons سے اصل URLs کے ذریعے استعمال کی گئی ہیں (لائسنس: CC BY-SA 4.0)۔</p>
+            <ul class="src-list">
+              <li>Delhi Gate, Lahore — Saqib، CC BY-SA 4.0</li>
+              <li>Wazir Khan Mosque entry — Shahbaz Aslam، CC BY-SA 4.0</li>
+              <li>Shahi Hammam dome — Kumail Hasan، CC BY-SA 4.0</li>
+            </ul>
+            <p><a href={WIKIMEDIA_CATEGORY_URL} target="_blank" rel="noopener noreferrer">Wikimedia Commons — Delhi Gate (Lahore) تصاویر ↗</a></p>
+          </div>
+          <div class="card">
+            <h3>نقشہ، پتہ اور اسکور</h3>
+            <p>نقشہ Google Maps embed اور Google Maps share link سے، پتہ گوگل میپس کے اندراج (H8JG+PHM) سے، اور درجہ بندی/جائزے بھی گوگل میپس کے صارفین سے لیے گئے ہیں۔ <a href={MAPS_SHARE_URL} target="_blank" rel="noopener noreferrer">گوگل میپس ↗</a></p>
+          </div>
+          <div class="card">
+            <h3>موسم اور ہوا کا معیار</h3>
+            <p>درجہ حرارت، نمی، ہوا کی رفتار، بارش کا امکان اور سات دن کی پیش گوئی صفحہ کے “موسم اور پیش گوئی” والے حصے میں موجودہ وقت کے حساب سے دکھائی جاتی ہے اور ہر دورے پر خودکار طور پر تازہ ہو جاتی ہے۔ سہ ماہی حکمتِ عملی طویل المدتی موسمیاتی اوسط اور شہر کے فضائی معیار کے عمومی رجحان پر مبنی ہے۔</p>
+            <p class="credit">موسمیاتی اور فضائی معیار کا ڈیٹا ایک عوامی موسمیاتی سروس سے حاصل کیا گیا ہے؛ یہ اعداد و شمار صرف رہنمائی کے لیے ہیں، پیشہ ورانہ یا قانونی مقاصد کے لیے نہیں۔</p>
+          </div>
+          <div class="card">
+            <h3>سرکاری ذرائع</h3>
+            <ul class="src-list">
+              <li><a href={GOVT_TOURISM_URL} target="_blank" rel="noopener noreferrer">{COUNTRY_NAME} / {STATE_PROVINCE} ٹورازم پورٹل — Walled City of Lahore Authority (WCLA) ↗</a></li>
+              <li><a href={GOVT_TOURISM_URL_ALT} target="_blank" rel="noopener noreferrer">Pakistan Tourism Development Corporation ↗</a></li>
+              <li><a href={MET_OFFICE_URL} target="_blank" rel="noopener noreferrer">محکمہِ موسمیاتِ پاکستان (Pakistan Meteorological Department) ↗</a></li>
+              <li><a href={WIKIPEDIA_URL} target="_blank" rel="noopener noreferrer">Wikipedia — {ATTRACTION_FULL_NAME} ↗</a></li>
+            </ul>
+            <p class="credit">تازہ کاری: {REVIEW_SYNC_UR}۔ یہ سائٹ ایک آزاد وزیٹر گائیڈ ہے اور گوگل، WCLA یا کسی سرکاری ادارے سے وابستہ نہیں ہے۔ معلومات استعمال سے پہلے متعلقہ ادارے سے تصدیق کریں۔</p>
+          </div>
+        </div>
       </div>
     </section>
 
@@ -185,9 +1023,18 @@ const faqSchema = {
 
   <footer>
     <div class="container grid grid-2">
-      <div><img src="/icons/logo.svg" alt="" width="64" height="64" /><strong>دہلی گیٹ لاہور</strong><p>اندرون لاہور کے تاریخی دروازے کے لیے آزاد وزیٹر گائیڈ۔</p></div>
-      <div><p><a href="/privacy/">پرائیویسی</a> · <a href="/terms/">شرائط</a> · <a href="/cookies/">کوکی سیٹنگز</a></p><p class="credit">ہیرو تصویر: Saqib، CC BY-SA 4.0؛ دیگر تصاویر کے کریڈٹ متعلقہ کیپشن میں درج ہیں۔</p><p class="credit">یہ ویب سائٹ دہلی گیٹ، Walled City of Lahore Authority یا کسی سرکاری ادارے کی آفیشل ویب سائٹ نہیں ہے۔</p></div>
+      <div><img src="/icons/logo.svg" alt="دہلی گیٹ لاہور لوگو" width="64" height="64" /><strong>دہلی گیٹ لاہور</strong><p>{ATTRACTION_FULL_NAME} — {CITY_NAME}، {STATE_PROVINCE}، {COUNTRY_NAME} کے اندرونِ شہر کے تاریخی دروازے کے لیے آزاد وزیٹر گائیڈ۔</p><p class="credit">درجہ بندی {RATING_VALUE} · {RATING_COUNT} جائزے — گوگل میپس کے صارف جائزوں سے، ہم آہنگی {REVIEW_SYNC_UR}۔ <a href={MAPS_SHARE_URL} target="_blank" rel="noopener noreferrer">گوگل میپس پر تمام جائزے دیکھیں ↗</a></p></div>
+      <div><p><a href="#sources">ذرائع</a> · <a href="#map">نقشہ</a> · <a href="/privacy/">پرائیویسی</a> · <a href="/terms/">شرائط</a> · <a href="/cookies/">کوکی سیٹنگز</a></p><p class="credit">ہیرو تصویر: Saqib، CC BY-SA 4.0؛ دیگر تصاویر کے کریڈٹ متعلقہ کیپشن میں درج ہیں۔</p><p class="credit">یہ ویب سائٹ دہلی گیٹ، Walled City of Lahore Authority، گوگل یا کسی سرکاری ادارے کی آفیشل ویب سائٹ نہیں ہے۔</p></div>
     </div>
   </footer>
+
+  <script is:inline>
+    // PWA: register the offline/static cache service worker (progressive enhancement).
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js').catch(() => {});
+      });
+    }
+  </script>
 </body>
 </html>

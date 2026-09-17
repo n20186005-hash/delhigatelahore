@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://delhigatelahore.com/sitemap-index.xml
