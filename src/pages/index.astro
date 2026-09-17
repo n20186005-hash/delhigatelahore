@@ -1,212 +1,48 @@
 ---
 import '../styles/global.css';
+import WeatherRefresh from '../components/WeatherRefresh.astro';
+import * as attraction from '../data/attraction';
+import { describeWeather, loadWeather } from '../lib/weather';
 
-// ---------------------------------------------------------------------------
-// Single-attraction SEO entity bindings — change only the values below
-// ---------------------------------------------------------------------------
-const DOMAIN_NAME = 'delhigatelahore.com';
-const ATTRACTION_FULL_NAME = 'Delhi Gate, Lahore';
-const ATTRACTION_SHORT_NAME = 'Delhi Gate';
-const CITY_NAME = 'Lahore';
-const STATE_PROVINCE = 'Punjab';
-const COUNTRY_NAME = 'Pakistan';
-const COUNTRY_CODE_2LETTER = 'PK';
-const POSTAL_CODE = '54000';
-const LATITUDE = 31.5821649;
-const LONGITUDE = 74.3264164;
-const MAPS_SHARE_URL = 'https://maps.app.goo.gl/Q8yoAtkexN7HjBCu8';
-const MAPS_EMBED_SRC = 'https://www.google.com/maps?q=31.5821649,74.3264164&hl=en&z=17&output=embed';
-const MAPS_DIRECTIONS_URL = 'https://www.google.com/maps?q=31.5821649,74.3264164';
-const NEARBY_LANDMARK_1 = 'Wazir Khan Mosque';
-const NEARBY_LANDMARK_2 = 'Shahi Hammam';
-const GOVT_TOURISM_URL = 'https://www.wcla.pk/';
-const GOVT_TOURISM_URL_ALT = 'https://tourism.gov.pk/';
-const WIKIPEDIA_URL = 'https://en.wikipedia.org/wiki/Delhi_Gate,_Lahore';
-const WIKIMEDIA_CATEGORY_URL = 'https://commons.wikimedia.org/wiki/Category:Delhi_Gate_(Lahore)';
-const MET_OFFICE_URL = 'https://www.pmd.gov.pk/';
+const {
+  ATTRACTION_FULL_NAME,
+  ATTRACTION_SHORT_NAME,
+  CITY_NAME,
+  COUNTRY_CODE_2LETTER,
+  COUNTRY_NAME,
+  DOMAIN_NAME,
+  GOVT_TOURISM_URL,
+  GOVT_TOURISM_URL_ALT,
+  HERO_IMAGE_ABSOLUTE,
+  LATITUDE,
+  LONGITUDE,
+  MAPS_DIRECTIONS_URL,
+  MAPS_EMBED_SRC,
+  MAPS_SHARE_URL,
+  MET_OFFICE_URL,
+  NEARBY_LANDMARK_1,
+  NEARBY_LANDMARK_2,
+  POSTAL_CODE,
+  RATING_COUNT,
+  RATING_MAX,
+  RATING_VALUE,
+  REVIEW_CATEGORY_UR,
+  REVIEW_SYNC_UR,
+  STATE_PROVINCE,
+  WIKIMEDIA_CATEGORY_URL,
+  WIKIPEDIA_URL
+} = attraction;
 
-// Rating / review numbers are shown on the page only and are intentionally
-// kept out of every JSON-LD block (see "reviews" section near the map).
-const RATING_VALUE = '4.6';
-const RATING_COUNT = '21,997';
-const RATING_MAX = '5';
-const REVIEW_CATEGORY_EN = 'Historical landmark';
-const REVIEW_CATEGORY_UR = 'تاریخی یادگار';
-const REVIEW_SYNC_UR = 'ستمبر 2026ء';
-const REVIEW_SYNC_EN = 'September 2026';
+const heroImageAbsolute = HERO_IMAGE_ABSOLUTE;
 
 const site = Astro.site ?? new URL(`https://${DOMAIN_NAME}`);
-const canonical = new URL('/', site).toString();
-const ogImage = new URL('/images/og-cover.png', site).toString();
+const canonical = new URL("/", site).toString();
+const ogImage = new URL("/images/og-cover.png", site).toString();
 const ogImageAlt = `${ATTRACTION_FULL_NAME} — ${CITY_NAME}, ${COUNTRY_NAME}`;
-const heroImageAbsolute =
-  'https://upload.wikimedia.org/wikipedia/commons/1/1b/Delhi_Gate%2C_Lahore.jpg';
 
-// ---------------------------------------------------------------------------
-// Weather & air quality
-// Data is requested from inside this component (server side) while the page is
-// rendered, so visitors never see request details — only the plain numbers.
-// The static page is then refreshed in the visitor's browser (see #wx script).
-// ---------------------------------------------------------------------------
-const WEATHER_QUERY =
-  `latitude=${LATITUDE}&longitude=${LONGITUDE}` +
-  '&current=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,weather_code,wind_speed_10m' +
-  '&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,precipitation_probability_max,uv_index_max,wind_speed_10m_max' +
-  '&forecast_days=7&timezone=Asia%2FKarachi';
-const WEATHER_API = `https://api.open-meteo.com/v1/forecast?${WEATHER_QUERY}`;
-const WEATHER_AIR_API =
-  `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${LATITUDE}&longitude=${LONGITUDE}` +
-  '&current=us_aqi,european_aqi,pm2_5,pm10&timezone=Asia%2FKarachi';
-
-// WMO weather codes → [Urdu description, glyph]
-const WMO_CODES = {
-  0: ['صاف آسمان', '☀️'],
-  1: ['عموماً صاف', '🌤️'],
-  2: ['جزوی بادل', '⛅'],
-  3: ['ابراہ', '☁️'],
-  45: ['دھند', '🌫️'],
-  48: ['جمی ہوئی دھند', '🌫️'],
-  51: ['ہلکی بوندا باندی', '🌦️'],
-  53: ['درمیانی بوندا باندی', '🌦️'],
-  55: ['گہری بوندا باندی', '🌧️'],
-  56: ['ہلکی برفانی بوندا باندی', '🌧️'],
-  57: ['گہری برفانی بوندا باندی', '🌧️'],
-  61: ['ہلکی بارش', '🌧️'],
-  63: ['درمیانی بارش', '🌧️'],
-  65: ['تیز بارش', '🌧️'],
-  66: ['ہلکی برفانی بارش', '🌨️'],
-  67: ['تیز برفانی بارش', '🌨️'],
-  71: ['ہلکی برفباری', '🌨️'],
-  73: ['درمیانی برفباری', '🌨️'],
-  75: ['شدید برفباری', '❄️'],
-  77: ['برف کے دانے', '🌨️'],
-  80: ['ہلکی جھڑی', '🌦️'],
-  81: ['درمیانی جھڑی', '🌧️'],
-  82: ['تیز جھڑی', '⛈️'],
-  85: ['ہلکی برفانی جھڑی', '🌨️'],
-  86: ['شدید برفانی جھڑی', '❄️'],
-  95: ['گرج چمک کے ساتھ بارش', '⛈️'],
-  96: ['گرج چمک اور اولے', '⛈️'],
-  99: ['شدید گرج چمک اور اولے', '⛈️']
-};
-const WMO_FALLBACK = ['موسمی معلومات دستیاب نہیں', '🌡️'];
-const WEEKDAYS = ['اتوار', 'پیر', 'منگل', 'بدھ', 'جمعرات', 'جمعہ', 'ہفتہ'];
-const MONTHS = ['جنوری', 'فروری', 'مارچ', 'اپریل', 'مئی', 'جون', 'جولائی', 'اگست', 'ستمبر', 'اکتوبر', 'نومبر', 'دسمبر'];
-const AQI_LEVELS: Array<[number, string, string]> = [
-  [50, 'اچھا', 'good'],
-  [100, 'درمیانہ', 'moderate'],
-  [150, 'حساس افراد کے لیے غیر صحت بخش', 'sensitive'],
-  [200, 'غیر صحت بخش', 'unhealthy'],
-  [300, 'بہت غیر صحت بخش', 'very-unhealthy'],
-  [Infinity, 'خطرناک', 'hazardous']
-];
-const WET_CODES = [51, 53, 55, 56, 57, 61, 63, 65, 66, 67, 80, 81, 82, 85, 86, 95, 96, 99];
-
-type WeatherDay = {
-  date: string;
-  label: string;
-  code: number | null;
-  max: number | null;
-  min: number | null;
-  rainChance: number | null;
-  rainSum: number | null;
-  uv: number | null;
-};
-type WeatherData = {
-  temperature: number | null;
-  apparent: number | null;
-  humidity: number | null;
-  wind: number | null;
-  precipitation: number | null;
-  code: number | null;
-  observedAt: string | null;
-  days: WeatherDay[];
-};
-type AirQualityData = {
-  aqi: number | null;
-  pm25: number | null;
-  pm10: number | null;
-  observedAt: string | null;
-  level: string | null;
-  levelKey: string | null;
-};
-
-const roundNumber = (value: unknown) => (typeof value === 'number' && Number.isFinite(value) ? Math.round(value) : null);
-const describeWeather = (code: unknown): string[] => WMO_CODES[Number(code) as keyof typeof WMO_CODES] ?? WMO_FALLBACK;
-const aqiLevel = (aqi: number) => AQI_LEVELS.find(([limit]) => aqi <= limit) ?? AQI_LEVELS[AQI_LEVELS.length - 1];
-
-function dayLabel(isoDate: string) {
-  const [year, month, day] = (isoDate ?? '').split('-').map(Number);
-  if (!year || !month || !day) return isoDate ?? '';
-  const weekday = WEEKDAYS[new Date(Date.UTC(year, month - 1, day)).getUTCDay()];
-  return `${weekday} ${day} ${MONTHS[month - 1]}`;
-}
-
-let weather: WeatherData | null = null;
-let airQuality: AirQualityData | null = null;
-try {
-  const [forecastResponse, airResponse] = await Promise.allSettled([
-    fetch(WEATHER_API, { headers: { accept: 'application/json' } }),
-    fetch(WEATHER_AIR_API, { headers: { accept: 'application/json' } })
-  ]);
-
-  if (forecastResponse.status === 'fulfilled' && forecastResponse.value.ok) {
-    const payload = await forecastResponse.value.json();
-    const current = payload?.current ?? {};
-    const daily = payload?.daily ?? {};
-    weather = {
-      temperature: roundNumber(current.temperature_2m),
-      apparent: roundNumber(current.apparent_temperature),
-      humidity: roundNumber(current.relative_humidity_2m),
-      wind: roundNumber(current.wind_speed_10m),
-      precipitation: typeof current.precipitation === 'number' ? current.precipitation : null,
-      code: Number.isFinite(Number(current.weather_code)) ? Number(current.weather_code) : null,
-      observedAt: current.time ?? null,
-      days: (daily.time ?? []).map((date: string, index: number) => ({
-        date,
-        label: dayLabel(date),
-        code: Number.isFinite(Number(daily.weather_code?.[index])) ? Number(daily.weather_code[index]) : null,
-        max: roundNumber(daily.temperature_2m_max?.[index]),
-        min: roundNumber(daily.temperature_2m_min?.[index]),
-        rainChance: roundNumber(daily.precipitation_probability_max?.[index]),
-        rainSum: typeof daily.precipitation_sum?.[index] === 'number' ? daily.precipitation_sum[index] : null,
-        uv: typeof daily.uv_index_max?.[index] === 'number' ? Math.round(daily.uv_index_max[index] * 10) / 10 : null
-      }))
-    };
-  }
-
-  if (airResponse.status === 'fulfilled' && airResponse.value.ok) {
-    const payload = await airResponse.value.json();
-    const current = payload?.current ?? {};
-    const aqi = roundNumber(current.us_aqi);
-    airQuality = {
-      aqi,
-      pm25: roundNumber(current.pm2_5),
-      pm10: roundNumber(current.pm10),
-      observedAt: current.time ?? null,
-      level: aqi == null ? null : aqiLevel(aqi)[1],
-      levelKey: aqi == null ? null : aqiLevel(aqi)[2]
-    };
-  }
-} catch {
-  weather = null;
-  airQuality = null;
-}
-
-const todayWeather = weather?.days?.[0] ?? null;
-const needsUmbrella =
-  (todayWeather?.rainChance ?? 0) >= 60 ||
-  (todayWeather?.rainSum ?? 0) >= 2 ||
-  (todayWeather?.code != null && WET_CODES.includes(todayWeather.code));
-const hotDay = (todayWeather?.max ?? 0) >= 38;
-const poorAir = (airQuality?.aqi ?? 0) > 150;
-const weatherAdvice = needsUmbrella
-  ? 'آج بارش کا امکان زیادہ ہے — چھتری یا بارش کوٹ ساتھ رکھیں اور پتھریلی گلیوں میں پھسلن کا خیال رکھیں۔'
-  : hotDay
-    ? 'آج گرمی کا دن ہے — پانی، ٹوپی اور دھوپ سے بچاؤ ساتھ رکھیں، واک صبح یا شام کو رکھیں۔'
-    : poorAir
-      ? 'ہوا کا معیار خراب ہے — حساس افراد ماسک پہنیں اور باہر زیادہ دیر ٹھہرنے سے گریز کریں۔'
-      : 'موسم عام طور پر پیدل واک کے لیے موزوں ہے — پھر بھی پانی، ٹوپی اور آرام دہ جوتے بہتر ہیں۔';
+// Weather & air quality for the gate — values are read server side and then
+// refreshed in the visitor’s browser (see WeatherRefresh.astro).
+const { weather, airQuality, advice: weatherAdvice } = await loadWeather('ur');
 
 const attractionSchema = {
   '@context': 'https://schema.org',
@@ -330,12 +166,7 @@ const faqSchema = {
   <script is:inline type="application/ld+json" set:html={JSON.stringify(faqSchema)}></script>
 
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-HXM22WWPKP"></script>
-  <script is:inline>
-    window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
-    gtag('js', new Date());
-    gtag('config', 'G-HXM22WWPKP');
-  </script>
+    <WeatherRefresh lang="ur" />
 </head>
 <body>
   <header class="hero tile-border">
@@ -413,11 +244,11 @@ const faqSchema = {
           <div class="wx-wrap">
             <article class="wx-now">
               <div class="wx-now-head">
-                <span class="wx-glyph" id="wx-glyph">{describeWeather(weather.code)[1]}</span>
+                <span class="wx-glyph" id="wx-glyph">{describeWeather(weather.code, 'ur')[1]}</span>
                 <span class="wx-temp"><strong id="wx-temp">{weather.temperature}</strong>°</span>
                 <span class="wx-unit">سینٹی گریڈ · {CITY_NAME}</span>
               </div>
-              <p class="wx-now-desc" id="wx-desc">{describeWeather(weather.code)[0]}</p>
+              <p class="wx-now-desc" id="wx-desc">{describeWeather(weather.code, 'ur')[0]}</p>
               <ul class="wx-metrics">
                 <li><span>محسوس ہوتا ہے</span><strong><span id="wx-feels">{weather.apparent}</span>°</strong></li>
                 <li><span>نمی</span><strong><span id="wx-hum">{weather.humidity}</span>%</strong></li>
@@ -449,8 +280,8 @@ const faqSchema = {
             {weather.days.map((day, index) => (
               <li class="wx-day" data-day={String(index)}>
                 <span class="wx-day-name">{day.label}</span>
-                <span class="wx-day-glyph" data-glyph>{describeWeather(day.code)[1]}</span>
-                <span class="wx-day-desc" data-desc>{describeWeather(day.code)[0]}</span>
+                <span class="wx-day-glyph" data-glyph>{describeWeather(day.code, 'ur')[1]}</span>
+                <span class="wx-day-desc" data-desc>{describeWeather(day.code, 'ur')[0]}</span>
                 <span class="wx-day-temps"><strong data-max>{day.max}</strong>° / <span data-min>{day.min}</span>°</span>
                 <span class="wx-day-rain">بارش کا امکان <strong data-pop>{day.rainChance}</strong>%</span>
               </li>

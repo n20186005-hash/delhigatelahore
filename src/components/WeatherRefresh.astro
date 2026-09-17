@@ -1,0 +1,176 @@
+---
+import { clientLabels, type LangCode } from '../lib/weather';
+
+interface Props {
+  lang: LangCode;
+}
+
+const { lang } = Astro.props;
+const labels = clientLabels(lang);
+---
+
+<script define:vars={{ labels }}>
+  // Keeps the prerendered weather panel current while the page stays static.
+  (function () {
+    var panel = document.getElementById('weather');
+    if (!panel || !window.fetch) return;
+
+    var FORECAST =
+      'https://api.open-meteo.com/v1/forecast?latitude=' +
+      labels.latitude +
+      '&longitude=' +
+      labels.longitude +
+      '&current=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,weather_code,wind_speed_10m' +
+      '&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max' +
+      '&forecast_days=7&timezone=Asia%2FKarachi';
+    var AIR =
+      'https://air-quality-api.open-meteo.com/v1/air-quality?latitude=' +
+      labels.latitude +
+      '&longitude=' +
+      labels.longitude +
+      '&current=us_aqi,pm2_5,pm10&timezone=Asia%2FKarachi';
+    var CACHE_KEY = 'delhi-gate-weather-' + labels.lang;
+    var TTL = 15 * 60 * 1000;
+
+    function text(id, value) {
+      var el = document.getElementById(id);
+      if (el && value != null) el.textContent = value;
+    }
+
+    function round(value) {
+      return typeof value === 'number' && isFinite(value) ? Math.round(value) : value;
+    }
+
+    function describe(code) {
+      var key = Number(code);
+      var label = isFinite(key) ? labels.codes[key] : null;
+      return [label || labels.fallback, '🌡️'];
+    }
+
+    function glyphFor(code) {
+      var glyphs = {
+        0: '☀️', 1: '🌤️', 2: '⛅', 3: '☁️', 45: '🌫️', 48: '🌫️', 51: '🌦️', 53: '🌦️', 55: '🌧️',
+        56: '🌧️', 57: '🌧️', 61: '🌧️', 63: '🌧️', 65: '🌧️', 66: '🌨️', 67: '🌨️', 71: '🌨️',
+        73: '🌨️', 75: '❄️', 77: '🌨️', 80: '🌦️', 81: '🌧️', 82: '⛈️', 85: '🌨️', 86: '❄️',
+        95: '⛈️', 96: '⛈️', 99: '⛈️'
+      };
+      return glyphs[Number(code)] || '🌡️';
+    }
+
+    function level(value) {
+      for (var i = 0; i < labels.levels.length; i++) if (value <= labels.levels[i][0]) return labels.levels[i];
+      return labels.levels[labels.levels.length - 1];
+    }
+
+    function labelFor(iso) {
+      var parts = String(iso || '').split('-');
+      if (parts.length !== 3) return iso;
+      var d = new Date(Date.UTC(+parts[0], +parts[1] - 1, +parts[2]));
+      if (labels.lang === 'ur') {
+        return labels.weekdays[d.getUTCDay()] + ' ' + +parts[2] + ' ' + labels.months[+parts[1] - 1];
+      }
+      return labels.weekdays[d.getUTCDay()] + ' ' + labels.months[+parts[1] - 1] + ' ' + +parts[2];
+    }
+
+    function adviceFor(rain, max, code) {
+      if (rain >= 60 || labels.wet.indexOf(Number(code)) > -1) return labels.advice.rain;
+      if (round(max) >= 38) return labels.advice.hot;
+      return labels.advice.fair;
+    }
+
+    function apply(data) {
+      if (!data || !data.current) return;
+      var current = data.current;
+      var daily = data.daily || {};
+      var todayCode = daily.weather_code ? daily.weather_code[0] : current.weather_code;
+      var todayMax = daily.temperature_2m_max ? daily.temperature_2m_max[0] : current.temperature_2m;
+      var todayRain = daily.precipitation_probability_max ? daily.precipitation_probability_max[0] : 0;
+
+      text('wx-temp', round(current.temperature_2m));
+      text('wx-feels', round(current.apparent_temperature));
+      text('wx-hum', round(current.relative_humidity_2m));
+      text('wx-wind', round(current.wind_speed_10m));
+      text('wx-precip', typeof current.precipitation === 'number' ? current.precipitation : 0);
+      text('wx-glyph', glyphFor(current.weather_code));
+      text('wx-desc', describe(current.weather_code)[0]);
+      if (current.time) text('wx-clock', labels.updatePrefix + current.time.replace('T', ' · '));
+      text('wx-advice', adviceFor(todayRain, todayMax, todayCode));
+
+      if (daily.time) {
+        daily.time.forEach(function (iso, index) {
+          var card = panel.querySelector('.wx-day[data-day="' + index + '"]');
+          if (!card) return;
+          var name = card.querySelector('.wx-day-name');
+          var glyph = card.querySelector('[data-glyph]');
+          var descr = card.querySelector('[data-desc]');
+          var max = card.querySelector('[data-max]');
+          var min = card.querySelector('[data-min]');
+          var pop = card.querySelector('[data-pop]');
+          if (name) name.textContent = labelFor(iso);
+          if (glyph) glyph.textContent = glyphFor(daily.weather_code ? daily.weather_code[index] : null);
+          if (descr) descr.textContent = describe(daily.weather_code ? daily.weather_code[index] : null)[0];
+          if (max) max.textContent = round(daily.temperature_2m_max ? daily.temperature_2m_max[index] : null);
+          if (min) min.textContent = round(daily.temperature_2m_min ? daily.temperature_2m_min[index] : null);
+          if (pop) pop.textContent = round(daily.precipitation_probability_max ? daily.precipitation_probability_max[index] : null);
+        });
+      }
+    }
+
+    function applyAir(data) {
+      if (!data || !data.current) return;
+      var current = data.current;
+      text('wx-aqi', round(current.us_aqi));
+      text('wx-pm25', round(current.pm2_5));
+      text('wx-pm10', round(current.pm10));
+      var info = level(current.us_aqi);
+      text('wx-aqi-label', info[1]);
+      var chip = panel.querySelector('.wx-air');
+      if (chip) chip.className = 'wx-air wx-air-' + info[2];
+    }
+
+    function readCache() {
+      try {
+        var raw = window.localStorage.getItem(CACHE_KEY);
+        if (!raw) return null;
+        var parsed = JSON.parse(raw);
+        return parsed && Date.now() - parsed.at < TTL ? parsed : null;
+      } catch (error) {
+        return null;
+      }
+    }
+
+    function refresh() {
+      var jobs = [
+        fetch(FORECAST)
+          .then(function (r) { return r.ok ? r.json() : null; })
+          .catch(function () { return null; }),
+        fetch(AIR)
+          .then(function (r) { return r.ok ? r.json() : null; })
+          .catch(function () { return null; })
+      ];
+      return Promise.all(jobs).then(function (results) {
+        if (!results[0] && !results[1]) return null;
+        if (results[0]) apply(results[0]);
+        if (results[1]) {
+          applyAir(results[1]);
+          if (results[1].current && results[1].current.us_aqi > 150) text('wx-advice', labels.advice.air);
+        }
+        try {
+          window.localStorage.setItem(CACHE_KEY, JSON.stringify({ at: Date.now(), data: results[0], air: results[1] }));
+        } catch (error) {}
+        return true;
+      });
+    }
+
+    var cached = readCache();
+    if (cached) {
+      apply(cached.data);
+      applyAir(cached.air);
+    } else {
+      refresh();
+    }
+    setInterval(function () {
+      if (document.visibilityState === 'visible') refresh();
+    }, TTL);
+  })();
+</script>
