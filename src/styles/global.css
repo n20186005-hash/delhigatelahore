@@ -1,0 +1,91 @@
+@import "tailwindcss";
+
+:root {
+  --brick: #9f3f2d;
+  --brick-deep: #5e241e;
+  --sand: #ecd7b5;
+  --paper: #fff8ec;
+  --ink: #251813;
+  --lapis: #0f5f67;
+  --gold: #c7983f;
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  background:
+    radial-gradient(circle at 10% 10%, rgba(199,152,63,.13), transparent 26rem),
+    linear-gradient(180deg, #f7ead5 0%, #fffaf2 32%, #f7ead5 100%);
+  color: var(--ink);
+  font-family: "Noto Nastaliq Urdu", "Noto Sans Arabic", "Segoe UI", Tahoma, sans-serif;
+  line-height: 1.9;
+}
+a { color: inherit; }
+img { display:block; max-width:100%; }
+.container { width:min(1120px, calc(100% - 2rem)); margin-inline:auto; }
+.tile-border {
+  border-block: 10px solid transparent;
+  border-image: repeating-linear-gradient(90deg,var(--lapis) 0 18px,var(--gold) 18px 36px,var(--brick) 36px 54px) 10;
+}
+.hero {
+  min-height: 88vh;
+  display:grid;
+  align-items:end;
+  position:relative;
+  isolation:isolate;
+  overflow:hidden;
+  background:#1b1411;
+}
+.hero::before {
+  content:""; position:absolute; inset:0; z-index:-2;
+  background-image: url('https://upload.wikimedia.org/wikipedia/commons/1/1b/Delhi_Gate%2C_Lahore.jpg');
+  background-size:cover; background-position:center;
+  filter:saturate(.85) contrast(1.05);
+}
+.hero::after {
+  content:""; position:absolute; inset:0; z-index:-1;
+  background:linear-gradient(180deg,rgba(10,8,7,.16),rgba(10,8,7,.3) 45%,rgba(22,12,9,.9));
+}
+.hero-content { padding:7rem 0 4rem; color:white; }
+.eyebrow { font-size:.95rem; letter-spacing:.08em; color:#ffe7b7; }
+h1 { font-size:clamp(3.4rem,10vw,8rem); line-height:1.05; margin:.35rem 0; font-weight:800; text-shadow:0 3px 20px #0008; }
+.hero p { max-width:760px; font-size:clamp(1rem,2vw,1.35rem); }
+.pills { display:flex; flex-wrap:wrap; gap:.7rem; margin-top:1.5rem; }
+.pill { background:#fff1; border:1px solid #ffffff55; backdrop-filter:blur(8px); padding:.45rem .8rem; border-radius:999px; }
+.nav { position:sticky; top:0; z-index:20; background:#fff8eceb; backdrop-filter:blur(12px); border-bottom:1px solid #7d4e3733; }
+.nav-inner { display:flex; align-items:center; gap:1rem; min-height:68px; overflow:auto; }
+.brand { display:flex; align-items:center; gap:.55rem; margin-inline-end:auto; font-weight:800; white-space:nowrap; }
+.brand img { width:42px; height:42px; }
+.nav a { text-decoration:none; white-space:nowrap; font-size:.95rem; }
+section { padding:5.5rem 0; }
+.section-kicker { color:var(--brick); font-weight:800; font-size:.9rem; }
+h2 { font-size:clamp(2.2rem,5vw,4rem); line-height:1.25; margin:.25rem 0 1.5rem; }
+h3 { margin:.2rem 0 .6rem; font-size:1.35rem; }
+.lede { font-size:1.15rem; max-width:800px; }
+.grid { display:grid; gap:1.2rem; }
+.grid-2 { grid-template-columns:repeat(2,minmax(0,1fr)); }
+.grid-3 { grid-template-columns:repeat(3,minmax(0,1fr)); }
+.card { background:#fffdf8cc; border:1px solid #7b4b2c22; border-radius:22px; padding:1.4rem; box-shadow:0 16px 40px #5e241e0d; }
+.card strong { color:var(--brick-deep); }
+.photo-card { overflow:hidden; border-radius:26px; background:#201612; min-height:420px; position:relative; }
+.photo-card img { width:100%; height:100%; object-fit:cover; position:absolute; inset:0; }
+.photo-card .caption { position:absolute; inset:auto 0 0; padding:1rem; color:#fff; background:linear-gradient(transparent,#000b); }
+.arch { border-radius:50% 50% 12px 12px / 24% 24% 12px 12px; overflow:hidden; }
+.route { border-right:4px solid var(--gold); padding-right:1.2rem; }
+.route .step { position:relative; padding-bottom:1.25rem; }
+.route .step::before { content:""; width:.75rem; height:.75rem; background:var(--brick); border:3px solid var(--paper); box-shadow:0 0 0 2px var(--gold); border-radius:50%; position:absolute; right:-1.7rem; top:.4rem; }
+.notice { background:var(--brick-deep); color:#fff8ed; border-radius:26px; padding:1.5rem; }
+.map-wrap { border-radius:28px; overflow:hidden; border:8px solid #f2d8ad; box-shadow:0 20px 60px #4d1f1722; }
+.map-wrap iframe { width:100%; height:480px; border:0; display:block; }
+.faq details { background:#fffdf8; border:1px solid #70492c22; border-radius:16px; padding:1rem 1.1rem; margin:.8rem 0; }
+.faq summary { cursor:pointer; font-weight:800; }
+footer { background:#241713; color:#eadbc9; padding:3rem 0; }
+footer a { color:#fff; }
+.credit { font-size:.85rem; color:#6b584f; }
+@media (max-width: 760px) {
+  .grid-2,.grid-3 { grid-template-columns:1fr; }
+  .hero { min-height:76vh; }
+  section { padding:4rem 0; }
+  .nav-inner { min-height:60px; }
+}

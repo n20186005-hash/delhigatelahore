@@ -1,0 +1,193 @@
+---
+import '../styles/global.css';
+
+const site = Astro.site;
+const pagePath = '/';
+const canonical = site ? new URL(pagePath, site).toString() : undefined;
+const ogImagePath = '/icons/apple-touch-icon.png';
+const ogImage = site ? new URL(ogImagePath, site).toString() : undefined;
+
+const attractionSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'TouristAttraction',
+  name: 'دہلی گیٹ، لاہور',
+  alternateName: 'Delhi Gate, Lahore',
+  description: 'لاہور کے اندرون شہر کا تاریخی دروازہ، شاہی گزرگاہ اور مغلیہ ورثے کے اہم مقامات تک رسائی کا نمایاں نقطہ۔',
+  address: {
+    '@type': 'PostalAddress',
+    streetAddress: 'H8JG+PHM, Inside Delhi Gate, Akbari Mandi, Walled City of Lahore',
+    addressLocality: 'Lahore',
+    postalCode: '54000',
+    addressRegion: 'Punjab',
+    addressCountry: 'PK'
+  },
+  geo: { '@type': 'GeoCoordinates', latitude: 31.5821649, longitude: 74.3264164 },
+  openingHoursSpecification: [
+    { '@type': 'OpeningHoursSpecification', dayOfWeek: ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'], opens: '00:00', closes: '23:59' }
+  ],
+  aggregateRating: { '@type': 'AggregateRating', ratingValue: '4.6', reviewCount: '21996', bestRating: '5', worstRating: '1' },
+  isAccessibleForFree: true,
+  ...(canonical ? { url: canonical } : {})
+};
+
+const faq = [
+  ['دہلی گیٹ دیکھنے کی فیس کتنی ہے؟','خود تاریخی دروازہ اور بازار کی گزرگاہ عام طور پر بغیر ٹکٹ دیکھی جا سکتی ہے۔ شahi حمام، خصوصی واک یا گائیڈڈ ٹور کی الگ فیس ہو سکتی ہے؛ روانگی سے پہلے WCLA کی تازہ معلومات دیکھیں۔'],
+  ['کتنا وقت رکھنا بہتر ہے؟','صرف دروازے کے لیے 20–40 منٹ کافی ہو سکتے ہیں، مگر شاہی حمام، وزیر خان مسجد اور شاہی گزرگاہ کے ساتھ 2–3 گھنٹے زیادہ مناسب ہیں۔'],
+  ['کون سا وقت بہتر ہے؟','صبح نسبتاً پرسکون روشنی اور کم ہجوم کے لیے اچھا ہے۔ شام میں بازار کا ماحول زیادہ زندہ محسوس ہوتا ہے، مگر ٹریفک اور رش بڑھ سکتا ہے۔'],
+  ['پارکنگ کہاں ملتی ہے؟','دروازے کے عین اندر گاڑی لے جانا عملی نہیں۔ سرکلر روڈ کے اطراف دستیاب قانونی پارکنگ یا ڈراپ آف استعمال کریں اور آخری حصہ پیدل یا رکشہ سے طے کریں۔'],
+  ['خاندان کے ساتھ جا سکتے ہیں؟','جی ہاں۔ یہ فعال بازار اور تاریخی محلہ ہے؛ بچوں کے ساتھ مصروف گلیوں میں ہاتھ تھامیں، آرام دہ جوتے پہنیں اور مذہبی مقامات پر لباس و آداب کا خیال رکھیں۔']
+];
+const faqSchema = {
+  '@context':'https://schema.org', '@type':'FAQPage',
+  mainEntity: faq.map(([q,a]) => ({ '@type':'Question', name:q, acceptedAnswer:{'@type':'Answer', text:a} }))
+};
+---
+<!doctype html>
+<html lang="ur" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>دہلی گیٹ لاہور — اندرون شہر کی شاہی دہلیز</title>
+  <meta name="description" content="دہلی گیٹ لاہور کے لیے اردو وزیٹر گائیڈ: تاریخ، شاہی گزرگاہ، اوقات، فیس، پارکنگ، ٹرانسپورٹ، آس پاس کے مقامات، کھانا اور FAQ۔" />
+  {canonical && <link rel="canonical" href={canonical} />}
+  <meta property="og:title" content="دہلی گیٹ لاہور — اندرون شہر کی شاہی دہلیز" />
+  <meta property="og:description" content="دہلی گیٹ، شاہی حمام اور وزیر خان مسجد کے ساتھ پرانے لاہور کو قدموں سے دریافت کریں۔" />
+  <meta property="og:type" content="website" />
+  {canonical && <meta property="og:url" content={canonical} />}
+  {ogImage && <meta property="og:image" content={ogImage} />}
+  <meta name="twitter:card" content="summary_large_image" />
+  <link rel="icon" href="/icons/favicon.svg" type="image/svg+xml" />
+  <link rel="icon" href="/icons/favicon-32.png" sizes="32x32" />
+  <link rel="icon" href="/icons/favicon-16.png" sizes="16x16" />
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" sizes="180x180" />
+  <script type="application/ld+json" set:html={JSON.stringify(attractionSchema)}></script>
+  <script type="application/ld+json" set:html={JSON.stringify(faqSchema)}></script>
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-HXM22WWPKP"></script>
+  <script is:inline>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-HXM22WWPKP');
+  </script>
+</head>
+<body>
+  <header class="hero tile-border">
+    <div class="container hero-content">
+      <div class="eyebrow">اندرون لاہور · شاہی گزرگاہ</div>
+      <h1>دہلی گیٹ</h1>
+      <p>اینٹوں کی اس بلند دہلیز کے پار لاہور کا وہ شہر شروع ہوتا ہے جہاں بازار، گلیاں، حمام، مسجد اور روزمرہ زندگی ایک ہی تاریخی منظر میں مل جاتے ہیں۔</p>
+      <div class="pills">
+        <span class="pill">★ 4.6 · 21,996 جائزے</span>
+        <span class="pill">24 گھنٹے گزرگاہ</span>
+        <span class="pill">تقریباً 2–3 گھنٹے مکمل واک</span>
+        <span class="pill">31.5821649, 74.3264164</span>
+      </div>
+    </div>
+  </header>
+
+  <nav class="nav">
+    <div class="container nav-inner">
+      <a class="brand" href="#top"><img src="/icons/logo.svg" alt="دہلی گیٹ لوگو" />دہلی گیٹ لاہور</a>
+      <a href="#story">تعارف</a><a href="#visit">وزٹ پلان</a><a href="#food">کھانا</a><a href="#nearby">قریب کے مقامات</a><a href="#map">نقشہ</a><a href="#faq">سوالات</a>
+    </div>
+  </nav>
+
+  <main id="top">
+    <section id="story">
+      <div class="container grid grid-2" style="align-items:center">
+        <div>
+          <div class="section-kicker">ایک دروازہ، پورا شہر</div>
+          <h2>شاہی راستے کا زندہ آغاز</h2>
+          <p class="lede">دہلی گیٹ لاہور کے فصیل بند شہر کے باقی ماندہ تاریخی دروازوں میں سے ایک ہے۔ یہ مشرقی جانب اس راستے پر واقع ہے جو کبھی قلعہ لاہور کو دہلی کی سمت جانے والے شاہی راستے سے جوڑتا تھا۔ آج بھی اس کے اندر بازار، شاہی حمام اور وزیر خان مسجد تک پھیلی شاہی گزرگاہ پر شہری زندگی پوری شدت سے جاری ہے۔</p>
+          <div class="card"><strong>کیا دیکھیں:</strong> دروازے کی اینٹوں والی محراب، اندرونی بازار، شاہی حمام، سبیل والی گلی، گلی سرجن سنگھ، چوک وزیر خان اور وزیر خان مسجد۔</div>
+        </div>
+        <div class="photo-card arch">
+          <img src="https://upload.wikimedia.org/wikipedia/commons/2/28/Wazir_khan_mosque_entry.jpg" alt="وزیر خان مسجد کا صحن" loading="lazy" />
+          <div class="caption">وزیر خان مسجد — تصویر: Shahbaz Aslam، CC BY-SA 4.0</div>
+        </div>
+      </div>
+    </section>
+
+    <section id="visit" style="background:#f0d9b522">
+      <div class="container">
+        <div class="section-kicker">آنے سے پہلے</div><h2>عملی وزیٹر گائیڈ</h2>
+        <div class="grid grid-3">
+          <article class="card"><h3>🎟️ ٹکٹ / فیس</h3><p>دہلی گیٹ کی عام گزرگاہ کے لیے الگ داخلہ ٹکٹ نہیں۔ WCLA کے گائیڈڈ واک، خصوصی ایونٹس یا اندرونی تاریخی عمارتوں کے نرخ الگ ہو سکتے ہیں۔</p></article>
+          <article class="card"><h3>🕰️ بہترین وقت</h3><p>صبح 8 سے 10 بجے فوٹوگرافی، کم رش اور نرم روشنی کے لیے اچھا رہتا ہے۔ شام کو بازار زیادہ زندہ ہوتا ہے مگر ٹریفک بھی بڑھ جاتی ہے۔</p></article>
+          <article class="card"><h3>⏳ قیام</h3><p>صرف گیٹ کے لیے 20–40 منٹ؛ شاہی حمام اور وزیر خان مسجد سمیت تاریخی واک کے لیے تقریباً 2–3 گھنٹے رکھیں۔</p></article>
+          <article class="card"><h3>🚗 پارکنگ</h3><p>اندرون شہر کی گلیاں تنگ ہیں۔ سرکلر روڈ کے اطراف قانونی پارکنگ/ڈراپ آف بہتر ہے؛ آخری حصہ پیدل یا رکشے پر کریں۔</p></article>
+          <article class="card"><h3>👟 کیا ساتھ رکھیں</h3><p>آرام دہ جوتے، پانی، دھوپ میں ٹوپی اور مسجد کے لیے باوقار لباس۔ ہجوم میں موبائل و بٹوے کا خیال رکھیں۔</p></article>
+          <article class="card"><h3>📷 فوٹوگرافی</h3><p>عام اسٹریٹ فوٹوگرافی میں لوگوں کی پرائیویسی کا خیال رکھیں۔ تجارتی شوٹ کے لیے WCLA کے اجازت نامے/فیس لاگو ہو سکتے ہیں۔</p></article>
+        </div>
+      </div>
+    </section>
+
+    <section id="transport">
+      <div class="container grid grid-2">
+        <div>
+          <div class="section-kicker">تفصیلی آمدورفت</div><h2>یہاں کیسے پہنچیں</h2>
+          <div class="route">
+            <div class="step"><h3>رائیڈ ہیلنگ / ٹیکسی</h3><p>منزل میں “Delhi Gate Lahore, Circular Road” درج کریں۔ رش میں ڈرائیور آپ کو دروازے سے کچھ فاصلے پر اتار سکتا ہے۔</p></div>
+            <div class="step"><h3>آٹو رکشہ</h3><p>پرانے شہر کے آخری حصے کے لیے سب سے عملی انتخاب۔ ڈرائیور سے “دہلی گیٹ، اندرون لاہور” کہیں۔</p></div>
+            <div class="step"><h3>پبلک ٹرانسپورٹ</h3><p>قریب ترین بڑے بس/میٹرو اسٹاپ سے سرکلر روڈ تک پہنچ کر مختصر رکشہ یا پیدل حصہ شامل کریں۔ روٹ آپ کے آغاز کے مقام کے مطابق بدلتا ہے۔</p></div>
+            <div class="step"><h3>پیدل</h3><p>گیٹ سے اندر شاہی گزرگاہ بنیادی طور پر واک کا تجربہ ہے۔ راستہ بازار سے گزرتا ہے؛ ہجوم میں آہستہ چلیں۔</p></div>
+          </div>
+        </div>
+        <div class="photo-card arch" style="min-height:520px">
+          <img src="https://upload.wikimedia.org/wikipedia/commons/a/aa/Another_dome_view%2C_Wazir_Khan%27s_hammams.jpg" alt="شاہی حمام کا گنبد" loading="lazy" />
+          <div class="caption">شاہی حمام — تصویر: Kumail Hasan، CC BY-SA 4.0</div>
+        </div>
+      </div>
+    </section>
+
+    <section id="nearby" style="background:#fff9ef">
+      <div class="container"><div class="section-kicker">پیدل دریافت کریں</div><h2>قریب کے تاریخی مقامات</h2>
+        <div class="grid grid-3">
+          <article class="card"><h3>شاہی حمام</h3><p>دہلی گیٹ سے چند قدم اندر۔ مغلیہ دور کا واحد باقی ماندہ عوامی حمام، جس میں فریسکو اور زیرِفرش حرارتی نظام کے آثار دیکھے جا سکتے ہیں۔</p></article>
+          <article class="card"><h3>وزیر خان مسجد</h3><p>تقریباً 200 میٹر اندر شاہی گزرگاہ پر۔ کاشی کاری، خطاطی اور رنگین نقش و نگار کے لیے لاہور کی نمایاں مغلیہ مسجد۔</p></article>
+          <article class="card"><h3>گلی سرجن سنگھ</h3><p>بحال شدہ تاریخی گلی، لکڑی کے جھروکوں اور روایتی رہائشی کردار کے ساتھ اندرون لاہور کی باریک شہری ساخت دکھاتی ہے۔</p></article>
+          <article class="card"><h3>چوک وزیر خان</h3><p>مسجد کے سامنے تاریخی شہری چوک؛ آس پاس کرافٹ بازار، حویلیاں اور پرانے تجارتی راستے ہیں۔</p></article>
+          <article class="card"><h3>اکبری منڈی</h3><p>دہلی گیٹ کے قریب قدیم تھوک بازار، جہاں مصالحوں اور اناج کی تجارت نے علاقے کی شناخت بنائی۔</p></article>
+          <article class="card"><h3>قلعہ لاہور و بادشاہی مسجد</h3><p>اسی تاریخی شہر کے مغربی سرے پر۔ دہلی گیٹ سے مکمل شاہی گزرگاہ واک کی قدرتی منزلیں، مگر فاصلہ نسبتاً زیادہ ہے۔</p></article>
+        </div>
+      </div>
+    </section>
+
+    <section id="food">
+      <div class="container">
+        <div class="section-kicker">لاہوری ذائقہ</div><h2>آس پاس کیا کھائیں</h2>
+        <div class="grid grid-3">
+          <article class="card"><h3>روایتی ناشتہ</h3><p>پرانے شہر میں حلوہ پوری، چنے، نان اور لسی عام انتخاب ہیں۔ صبح کی واک کے ساتھ ناشتے کا وقفہ بہترین رہتا ہے۔</p></article>
+          <article class="card"><h3>بازار کے اسنیکس</h3><p>سموسہ، پکوڑے، چائے اور موسمی مٹھائیاں گلیوں میں آسانی سے مل جاتی ہیں۔ مصروف دکان اور تازہ تیار ہونے والی چیز کو ترجیح دیں۔</p></article>
+          <article class="card"><h3>فورٹ روڈ فوڈ اسٹریٹ</h3><p>اگر آپ واک قلعہ لاہور کی طرف مکمل کریں تو فورٹ روڈ کے ریستوران لاہور کے کلاسک پکوان اور بادشاہی مسجد کے نظارے کے لیے مشہور ہیں۔</p></article>
+        </div>
+        <p class="credit">نوٹ: کاروباری اوقات اور دکانوں کی دستیابی تیزی سے بدل سکتی ہے؛ اسی دن نقشہ/فون سے تصدیق بہتر ہے۔</p>
+      </div>
+    </section>
+
+    <section id="map" style="background:#5e241e0c">
+      <div class="container"><div class="section-kicker">مقام</div><h2>دہلی گیٹ کا نقشہ</h2>
+        <div class="map-wrap"><iframe title="دہلی گیٹ لاہور نقشہ" loading="lazy" referrerpolicy="no-referrer-when-downgrade" src="https://www.google.com/maps?q=31.5821649,74.3264164&hl=ur&z=17&output=embed"></iframe></div>
+        <p>پتہ: H8JG+PHM، Inside Delhi Gate، Akbari Mandi، Walled City of Lahore، Lahore 54000، Pakistan</p>
+      </div>
+    </section>
+
+    <section id="faq" class="faq">
+      <div class="container"><div class="section-kicker">FAQ</div><h2>عام سوالات</h2>
+        {faq.map(([q,a]) => <details><summary>{q}</summary><p>{a}</p></details>)}
+      </div>
+    </section>
+
+    <section>
+      <div class="container notice"><h2 style="font-size:2rem">چھوٹی سی منصوبہ بندی</h2><p>دہلی گیٹ ایک “صرف عمارت دیکھنے” والی جگہ نہیں؛ اصل تجربہ دروازے سے اندر چلنے، بازار کی رفتار محسوس کرنے، شاہی حمام دیکھنے اور وزیر خان مسجد تک پہنچنے میں ہے۔ مقامی آبادی کے روزمرہ راستے کا احترام کریں۔</p></div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="container grid grid-2">
+      <div><img src="/icons/logo.svg" alt="" width="64" height="64" /><strong>دہلی گیٹ لاہور</strong><p>اندرون لاہور کے تاریخی دروازے کے لیے آزاد وزیٹر گائیڈ۔</p></div>
+      <div><p><a href="/privacy/">پرائیویسی</a> · <a href="/terms/">شرائط</a> · <a href="/cookies/">کوکی سیٹنگز</a></p><p class="credit">ہیرو تصویر: Saqib، CC BY-SA 4.0؛ دیگر تصاویر کے کریڈٹ متعلقہ کیپشن میں درج ہیں۔</p><p class="credit">یہ ویب سائٹ دہلی گیٹ، Walled City of Lahore Authority یا کسی سرکاری ادارے کی آفیشل ویب سائٹ نہیں ہے۔</p></div>
+    </div>
+  </footer>
+</body>
+</html>
