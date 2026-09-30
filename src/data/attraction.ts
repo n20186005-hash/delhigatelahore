@@ -30,7 +30,7 @@ export const HERO_IMAGE_ABSOLUTE =
 // Rating / review numbers are shown on the page only and are intentionally
 // kept out of every JSON-LD block (see the reviews section near the map).
 export const RATING_VALUE = '4.6';
-export const RATING_COUNT = '21,997';
+export const RATING_COUNT = '22,042';
 export const RATING_MAX = '5';
 export const REVIEW_CATEGORY_EN = 'Historical landmark';
 export const REVIEW_CATEGORY_UR = 'تاریخی یادگار';

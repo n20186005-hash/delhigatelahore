@@ -46,7 +46,7 @@ const { weather, airQuality, advice: weatherAdvice } = await loadWeather('en');
 
 const attractionSchema = {
   '@context': 'https://schema.org',
-  '@type': 'TouristAttraction',
+  '@type': ['TouristAttraction', 'HistoricalLandmark'],
   '@id': `${canonical}#attraction`,
   name: ATTRACTION_FULL_NAME,
   inLanguage: 'en',
@@ -97,6 +97,7 @@ const faq = [
   [`How much does it cost to see ${ATTRACTION_SHORT_NAME}?`, 'Walking through the historic gate and the bazaar passage is generally free of charge. Separate tickets may apply for Shahi Hammam, special guided walks or curated tours — check the latest Walled City of Lahore Authority information before you set out.'],
   ['How much time should I allow?', 'Twenty to forty minutes is enough for the gate alone, but two to three hours is more realistic once you include the Shahi Hammam, Wazir Khan Mosque and the restored Royal Trail.'],
   ['What time of day is best?', 'Mornings give softer light and thinner crowds. Evenings feel livelier in the bazaar, but traffic and pedestrian density increase.'],
+  ['What are the opening hours of Delhi Gate?', 'Delhi Gate is an open historic passage through the Walled City and there is no formal gate closure, so you can walk through at any time, day or night. The neighbouring Shahi Hammam, Wazir Khan Mosque and other monuments keep their own daytime visiting hours, so check those separately if you plan to go inside.'],
   ['Where can I park?', 'Driving inside the gate is impractical. Use legal roadside parking or a paid lot around Circular Road, then walk or take a rickshaw for the last stretch.'],
   [`Which landmarks are close to ${ATTRACTION_SHORT_NAME}?`, `Inside the gate, ${NEARBY_LANDMARK_1} is roughly 200 metres along the Royal Trail and ${NEARBY_LANDMARK_2} is a few steps away. Gali Surjan Singh, Chowk Wazir Khan, Akbari Mandi, Lahore Fort and Badshahi Mosque are all part of the same historic city.`],
   ['Is it suitable for families?', 'Yes. This is a living bazaar quarter: hold children’s hands in busy lanes, wear comfortable shoes, and dress respectfully at religious sites.'],
@@ -115,8 +116,8 @@ const faqSchema = {
 <head>
 <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>{ATTRACTION_FULL_NAME} | Visitor Guide, Location &amp; What to Expect</title>
-  <meta name="description" content={`${ATTRACTION_FULL_NAME} — the historic Mughal gate of the Walled City of ${CITY_NAME}, ${STATE_PROVINCE}, ${COUNTRY_NAME}. Location, map, opening details, nearby landmarks, transport, itineraries and trip tips.`} />
+  <title>Delhi Gate Lahore — Opening Hours, Location &amp; Visitor Guide</title>
+  <meta name="description" content={`Delhi Gate, Lahore — opening hours, exact location, parking and nearby Wazir Khan Mosque & Shahi Hammam in the Walled City. Free to walk through, open 24 hours, with maps and transport tips.`} />
   <meta name="robots" content="index, follow, max-image-preview:large" />
   <link rel="canonical" href={canonical} />
 
@@ -135,8 +136,8 @@ const faqSchema = {
   <meta property="og:site_name" content={`${ATTRACTION_SHORT_NAME} — ${DOMAIN_NAME}`} />
   <meta property="og:locale" content="en_US" />
   <meta property="og:locale:alternate" content="ur_PK" />
-  <meta property="og:title" content={`${ATTRACTION_FULL_NAME} Travel Guide`} />
-  <meta property="og:description" content={`Official visitor guide to ${ATTRACTION_FULL_NAME} in ${CITY_NAME}, ${STATE_PROVINCE}, ${COUNTRY_NAME}.`} />
+  <meta property="og:title" content={`Delhi Gate Lahore — Visitor Guide`} />
+  <meta property="og:description" content={`Opening hours, exact location, parking and nearby landmarks for ${ATTRACTION_FULL_NAME} in the Walled City. Free to walk through, open 24 hours.`} />
   <meta property="og:type" content="website" />
   <meta property="og:url" content={canonical} />
   <meta property="og:image" content={ogImage} />
@@ -146,8 +147,8 @@ const faqSchema = {
 
   <!-- Twitter / X -->
   <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content={`${ATTRACTION_FULL_NAME} Travel Guide`} />
-  <meta name="twitter:description" content={`${ATTRACTION_FULL_NAME}, ${CITY_NAME}, ${STATE_PROVINCE}, ${COUNTRY_NAME} — location, map, opening details and nearby landmarks.`} />
+  <meta name="twitter:title" content={`Delhi Gate Lahore — Visitor Guide`} />
+  <meta name="twitter:description" content={`Opening hours, exact location, parking and nearby landmarks for ${ATTRACTION_FULL_NAME} in the Walled City. Free to walk through, open 24 hours.`} />
   <meta name="twitter:image" content={ogImage} />
   <meta name="twitter:image:alt" content={ogImageAlt} />
 
