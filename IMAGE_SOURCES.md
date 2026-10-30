@@ -1,14 +1,5 @@
-# تصویری ذرائع / Image sources
+# Image provenance
 
-The page uses real photographs from Wikimedia Commons via their original URLs because the build environment could not fetch binary image files into the container during packaging.
-
-- Delhi Gate, Lahore — Saqib, CC BY-SA 4.0: https://commons.wikimedia.org/wiki/File:Delhi_Gate,_Lahore.jpg
-- Wazir Khan Mosque entry — Shahbaz Aslam, CC BY-SA 4.0: https://commons.wikimedia.org/wiki/File:Wazir_khan_mosque_entry.jpg
-- Shahi Hammam dome — Kumail Hasan, CC BY-SA 4.0: https://commons.wikimedia.org/wiki/File:Another_dome_view,_Wazir_Khan%27s_hammams.jpg
-
-## Generated brand assets (no third-party content)
-- `public/images/og-cover.png` (1200×630 Open Graph / social card)
-- `public/icons/icon-192.png`, `public/icons/icon-512.png`, `public/icons/maskable-512.png` (PWA icons)
-
-They are drawn locally (gateway arch motif in the site palette) and contain no external imagery, so
-no attribution is required.
+- `public/images/wazir-entry.jpg`: Shahbaz Aslam, Wazir Khan Mosque entry, 6 February 2016; Commons version cropped and colour-corrected by Willard84. https://commons.wikimedia.org/wiki/File:Wazir_khan_mosque_entry.jpg . CC BY-SA 4.0 https://creativecommons.org/licenses/by-sa/4.0/ . Local file is Commons 1280 × 1264 resize; displayed with attribution, source and licence links. Historical nearby mosque image, not Delhi Gate or Shahi Hammam, not current access evidence. Derivative distributed under the same licence. No endorsement implied.
+- `public/images/gate-symbol.svg`: site-authored geometric arch illustration, not a photograph or reconstruction; CC0. Existing code-authored OG illustration and icons retained.
+- Previous remote gate/dome photographs are no longer served. Their file pages alone did not establish that the unavailable binaries had been visually checked. No unidentified people or unverified current photography permissions are asserted.

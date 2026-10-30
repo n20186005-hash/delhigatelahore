@@ -39,7 +39,7 @@ img { display:block; max-width:100%; }
 }
 .hero::before {
   content:""; position:absolute; inset:0; z-index:-2;
-  background-image: url('https://upload.wikimedia.org/wikipedia/commons/1/1b/Delhi_Gate%2C_Lahore.jpg');
+  background-image: url('/images/gate-symbol.svg');
   background-size:cover; background-position:center;
   filter:saturate(.85) contrast(1.05);
 }
@@ -188,3 +188,8 @@ a.pill { text-decoration:none; }
   .nav-inner { min-height:60px; }
   .breadcrumb-path { margin-inline-start:0; }
 }
+
+/* Keep long bilingual navigation in document flow and within the viewport. */
+.nav{position:relative}.nav-inner{flex-wrap:wrap;overflow:visible;padding-block:.7rem;gap:.4rem 1rem}.nav-inner a{min-height:44px;display:inline-flex;align-items:center}.hero h1{color:#fff;text-shadow:0 2px 5px #000}.hero-content{background:#251813d9;border-radius:1rem;padding:1.2rem;max-width:100%}h1{overflow-wrap:anywhere}.credit{color:#4f3930;font-size:.95rem}a:focus-visible,button:focus-visible{outline:3px solid #0f5f67;outline-offset:4px}section{scroll-margin-top:1rem}
+
+html[lang="ur"] .hero h1{line-height:1.8;margin-block:.2rem}.hero-name{margin-block:.3rem;line-height:1.5}.hero-name bdi{display:inline-block;white-space:nowrap;font-family:system-ui,sans-serif}

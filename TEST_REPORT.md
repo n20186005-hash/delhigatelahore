@@ -1,3 +1,5 @@
+> Historical baseline report retained below. Its old weather, opening-hour and image assertions are superseded by the current implementation and its independent release acceptance; this document is not evidence of present production verification.
+
 # عوامی تعمیراتی سیکشن · Build verification / تصدیقی رپورٹ
 
 Verified locally on 2026-09-17 with Node 22.12.0 and pnpm 12.4.2

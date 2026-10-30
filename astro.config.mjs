@@ -15,6 +15,7 @@ export default defineConfig({
   output: 'static',
   integrations: [
     sitemap({
+      filter: (page) => !/\/404(?:\/|$)/.test(new URL(page).pathname),
       // Default language lives at the root; the English version under /en/.
       // This adds the reciprocal xhtml:link hreflang entries to the sitemap.
       i18n: {

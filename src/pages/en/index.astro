@@ -1,8 +1,7 @@
 ---
 import '../../styles/global.css';
-import WeatherRefresh from '../../components/WeatherRefresh.astro';
+import WeatherPanel from '../../components/WeatherPanel.astro';
 import * as attraction from '../../data/attraction';
-import { describeWeather, loadWeather } from '../../lib/weather';
 
 const {
   ATTRACTION_FULL_NAME,
@@ -12,8 +11,6 @@ const {
   COUNTRY_NAME,
   DOMAIN_NAME,
   GOVT_TOURISM_URL,
-  GOVT_TOURISM_URL_ALT,
-  HERO_IMAGE_ABSOLUTE,
   LATITUDE,
   LONGITUDE,
   MAPS_DIRECTIONS_URL,
@@ -24,30 +21,26 @@ const {
   NEARBY_LANDMARK_2,
   POSTAL_CODE,
   RATING_COUNT,
-  RATING_MAX,
   RATING_VALUE,
   REVIEW_CATEGORY_EN,
   REVIEW_SYNC_EN,
   STATE_PROVINCE,
-  WIKIMEDIA_CATEGORY_URL,
   WIKIPEDIA_URL
 } = attraction;
 
-const heroImageAbsolute = HERO_IMAGE_ABSOLUTE;
 
 const site = Astro.site ?? new URL(`https://${DOMAIN_NAME}`);
 const canonical = new URL('/en/', site).toString();
 const ogImage = new URL('/images/og-cover.png', site).toString();
 const ogImageAlt = `${ATTRACTION_FULL_NAME} — ${CITY_NAME}, ${COUNTRY_NAME}`;
 
-// Weather & air quality for the gate — values are read server side and then
-// refreshed in the visitor’s browser (see WeatherRefresh.astro).
-const { weather, airQuality, advice: weatherAdvice } = await loadWeather('en');
+// Weather estimates are requested only in the browser by WeatherPanel.
+
 
 const attractionSchema = {
   '@context': 'https://schema.org',
   '@type': ['TouristAttraction', 'HistoricalLandmark'],
-  '@id': `${canonical}#attraction`,
+  '@id': `https://${DOMAIN_NAME}/#attraction`,
   name: ATTRACTION_FULL_NAME,
   inLanguage: 'en',
   alternateName: [
@@ -58,13 +51,10 @@ const attractionSchema = {
   ],
   description: `Comprehensive visitor guide to ${ATTRACTION_FULL_NAME} in ${CITY_NAME}, ${STATE_PROVINCE}, ${COUNTRY_NAME}.`,
   url: canonical,
-  image: [ogImage, heroImageAbsolute],
-  isAccessibleForFree: true,
-  publicAccess: true,
-  isPartOf: { '@type': 'TouristAttraction', name: 'Walled City of Lahore', url: WIKIPEDIA_URL },
+  image: [ogImage],
+  isPartOf: { '@type': 'TouristAttraction', name: 'Walled City of Lahore' },
   address: {
     '@type': 'PostalAddress',
-    streetAddress: 'H8JG+PHM, Inside Delhi Gate, Akbari Mandi, Walled City of Lahore',
     addressLocality: CITY_NAME,
     addressRegion: STATE_PROVINCE,
     postalCode: POSTAL_CODE,
@@ -72,10 +62,7 @@ const attractionSchema = {
   },
   geo: { '@type': 'GeoCoordinates', latitude: LATITUDE, longitude: LONGITUDE },
   hasMap: MAPS_SHARE_URL,
-  sameAs: [MAPS_SHARE_URL, GOVT_TOURISM_URL, WIKIPEDIA_URL, WIKIMEDIA_CATEGORY_URL],
-  openingHoursSpecification: [
-    { '@type': 'OpeningHoursSpecification', dayOfWeek: ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'], opens: '00:00', closes: '23:59' }
-  ]
+  sameAs: [MAPS_SHARE_URL, 'https://doam.gov.pk/public/sites/6449', WIKIPEDIA_URL]
   // NOTE: aggregateRating / review intentionally omitted — review data is
   // third-party Google Maps content and stays in the visible page only.
 };
@@ -94,16 +81,16 @@ const breadcrumbSchema = {
 
 const faq = [
   [`Where is ${ATTRACTION_FULL_NAME} located?`, `${ATTRACTION_SHORT_NAME} stands on the eastern side of the Walled City of ${CITY_NAME}, near Akbari Mandi, in ${CITY_NAME}, ${STATE_PROVINCE}, ${COUNTRY_NAME}. Address: H8JG+PHM, Inside Delhi Gate, Akbari Mandi, Walled City of ${CITY_NAME}, ${CITY_NAME} ${POSTAL_CODE}, ${COUNTRY_NAME}; coordinates ${LATITUDE}, ${LONGITUDE}.`],
-  [`How much does it cost to see ${ATTRACTION_SHORT_NAME}?`, 'Walking through the historic gate and the bazaar passage is generally free of charge. Separate tickets may apply for Shahi Hammam, special guided walks or curated tours — check the latest Walled City of Lahore Authority information before you set out.'],
-  ['How much time should I allow?', 'Twenty to forty minutes is enough for the gate alone, but two to three hours is more realistic once you include the Shahi Hammam, Wazir Khan Mosque and the restored Royal Trail.'],
-  ['What time of day is best?', 'Mornings give softer light and thinner crowds. Evenings feel livelier in the bazaar, but traffic and pedestrian density increase.'],
-  ['What are the opening hours of Delhi Gate?', 'Delhi Gate is an open historic passage through the Walled City and there is no formal gate closure, so you can walk through at any time, day or night. The neighbouring Shahi Hammam, Wazir Khan Mosque and other monuments keep their own daytime visiting hours, so check those separately if you plan to go inside.'],
-  ['Where can I park?', 'Driving inside the gate is impractical. Use legal roadside parking or a paid lot around Circular Road, then walk or take a rickshaw for the last stretch.'],
+  [`How much does it cost to see ${ATTRACTION_SHORT_NAME}?`, 'A current operator-confirmed fee for the passage has not been found. Shahi Hammam admission and WCLA tours are separate; check their current charges and booking terms.'],
+  ['How much time should I allow?', 'Rough planning estimates only: allow 20–40 minutes around the gate, or 2–3 hours for a wider visit if the separate sites confirm access. Queues, crowds, prayer, closures and your route can change the time needed.'],
+  ['What time of day is best?', 'Plan a daylight visit after checking access and the forecast. No night-time safety assessment has been verified.'],
+  ['What are the opening hours of Delhi Gate?', 'Google Maps lists the public passage as open 24 hours (29 October 2026); the operator has not confirmed current access hours or admission terms. This does not establish night-time safety or access to Shahi Hammam, Wazir Khan Mosque or paid walks. Confirm each facility and any tour booking separately with WCLA before travel.'],
+  ['Where can I park?', 'Ask your driver or the local authority to confirm a legal drop-off and parking option for your date. No parking location, availability, price or access route has been verified here.'],
   [`Which landmarks are close to ${ATTRACTION_SHORT_NAME}?`, `Inside the gate, ${NEARBY_LANDMARK_1} is roughly 200 metres along the Royal Trail and ${NEARBY_LANDMARK_2} is a few steps away. Gali Surjan Singh, Chowk Wazir Khan, Akbari Mandi, Lahore Fort and Badshahi Mosque are all part of the same historic city.`],
-  ['Is it suitable for families?', 'Yes. This is a living bazaar quarter: hold children’s hands in busy lanes, wear comfortable shoes, and dress respectfully at religious sites.'],
-  [`What is the easiest way to reach ${ATTRACTION_SHORT_NAME} from the airport?`, 'A taxi or a local ride-hailing service to Delhi Gate on Circular Road is the simplest option; the drive normally takes around 30–60 minutes depending on traffic.'],
-  [`What is the best time of year to visit ${ATTRACTION_SHORT_NAME}?`, 'February to April and October offer the most balanced conditions — moderate temperatures, little rain and clear light. May to June brings extreme heat, July to September heavy monsoon showers, and December to January fog and poor air quality.'],
-  ['Are there toilets, parking and ATMs nearby?', 'Yes, though basic. Washrooms are available at larger heritage sites and mosque complexes, parking is found along Circular Road just outside the gate, and ATMs sit on the main roads and in larger markets. Carry cash for small purchases.']
+  ['Is it suitable for families?', 'Busy lanes may be uneven and crowded. Check the route and facilities beforehand; the map entrance marker does not certify end-to-end accessibility.'],
+  [`What is the easiest way to reach ${ATTRACTION_SHORT_NAME} from the airport?`, 'Ask a licensed taxi or local transport operator for current options and a legal Circular Road drop-off. No airport travel time or timetable is verified here.'],
+  [`What is the best time of year to visit ${ATTRACTION_SHORT_NAME}?`, 'Choose your date using the current forecast, air-quality warnings and local access notices. This guide has not verified a Lahore climate-normal dataset, so no month is guaranteed to offer mild weather or clear air.'],
+  ['Are there toilets, parking and ATMs nearby?', 'Toilets, parking and ATMs are not verified on site. Ask the relevant facility about availability and step-free access before travel.']
 ];
 const faqSchema = {
   '@context':'https://schema.org', '@type':'FAQPage',
@@ -117,7 +104,7 @@ const faqSchema = {
 <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Delhi Gate Lahore — Opening Hours, Location &amp; Visitor Guide</title>
-  <meta name="description" content={`Delhi Gate, Lahore — opening hours, exact location, parking and nearby Wazir Khan Mosque & Shahi Hammam in the Walled City. Free to walk through, open 24 hours, with maps and transport tips.`} />
+  <meta name="description" content={`Delhi Gate, Lahore — opening hours, exact location, parking and nearby Wazir Khan Mosque & Shahi Hammam in the Walled City. Maps lists 24-hour passage access; operator confirmation pending, with maps and transport tips.`} />
   <meta name="robots" content="index, follow, max-image-preview:large" />
   <link rel="canonical" href={canonical} />
 
@@ -137,7 +124,7 @@ const faqSchema = {
   <meta property="og:locale" content="en_US" />
   <meta property="og:locale:alternate" content="ur_PK" />
   <meta property="og:title" content={`Delhi Gate Lahore — Visitor Guide`} />
-  <meta property="og:description" content={`Opening hours, exact location, parking and nearby landmarks for ${ATTRACTION_FULL_NAME} in the Walled City. Free to walk through, open 24 hours.`} />
+  <meta property="og:description" content={`Opening hours, exact location, parking and nearby landmarks for ${ATTRACTION_FULL_NAME} in the Walled City. Maps lists 24-hour passage access; operator confirmation pending.`} />
   <meta property="og:type" content="website" />
   <meta property="og:url" content={canonical} />
   <meta property="og:image" content={ogImage} />
@@ -148,7 +135,7 @@ const faqSchema = {
   <!-- Twitter / X -->
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content={`Delhi Gate Lahore — Visitor Guide`} />
-  <meta name="twitter:description" content={`Opening hours, exact location, parking and nearby landmarks for ${ATTRACTION_FULL_NAME} in the Walled City. Free to walk through, open 24 hours.`} />
+  <meta name="twitter:description" content={`Opening hours, exact location, parking and nearby landmarks for ${ATTRACTION_FULL_NAME} in the Walled City. Maps lists 24-hour passage access; operator confirmation pending.`} />
   <meta name="twitter:image" content={ogImage} />
   <meta name="twitter:image:alt" content={ogImageAlt} />
 
@@ -172,7 +159,7 @@ const faqSchema = {
   <script is:inline type="application/ld+json" set:html={JSON.stringify(breadcrumbSchema)}></script>
   <script is:inline type="application/ld+json" set:html={JSON.stringify(faqSchema)}></script>
 
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-HXM22WWPKP"></script>
+  <script is:inline async src="https://www.googletagmanager.com/gtag/js?id=G-HXM22WWPKP"></script>
 </head>
 <body>
   <header class="hero tile-border">
@@ -181,11 +168,11 @@ const faqSchema = {
       <h1>{ATTRACTION_FULL_NAME} Visitor Guide</h1>
       <p><strong>{ATTRACTION_FULL_NAME}</strong> — usually called simply <strong>{ATTRACTION_SHORT_NAME}</strong> — stands at the heart of <strong>{CITY_NAME}</strong>, <strong>{STATE_PROVINCE}</strong>, <strong>{COUNTRY_NAME}</strong>. It is the main eastern gate of the Walled City of {CITY_NAME} and the natural starting point for anyone exploring the old quarter.</p>
       <p>Beyond this high brick threshold begins the old city, where bazaars, narrow lanes, a royal bathhouse, a great mosque and everyday life all fold into a single historic streetscape.</p>
-      <div class="pills">
+      <div class="pills"><span class="pill">Symbolic cover, not a photograph</span>
         <a class="pill" href="#reviews" title="See reviews on Google Maps">★ {RATING_VALUE} · {RATING_COUNT} reviews</a>
         <span class="pill">{REVIEW_CATEGORY_EN}</span>
-        <span class="pill">Passage open 24 hours</span>
-        <span class="pill">About 2–3 hours for the full walk</span>
+        <span class="pill">Public passage — confirm access</span>
+        <span class="pill">About Rough itinerary estimate</span>
         <span class="pill">{LATITUDE}, {LONGITUDE}</span>
       </div>
     </div>
@@ -217,318 +204,47 @@ const faqSchema = {
         <div>
           <div class="section-kicker">One gate, a whole city</div>
           <h2>About {ATTRACTION_FULL_NAME}</h2>
-          <p class="lede">{ATTRACTION_SHORT_NAME} is one of the surviving gates of the Walled City of {CITY_NAME}. It stands on the eastern side, on the route that once linked Lahore Fort with the imperial road towards Delhi. Today the Royal Trail running inside it still carries intense city life, from bazaars and workshops to the Shahi Hammam and {NEARBY_LANDMARK_1}.</p>
+          <p class="lede">Delhi Gate is a historic eastern entrance in Lahore’s fortification, named for its orientation towards Delhi. The government heritage record places Wazir Khan Mosque inside the gate nearby. Royal Trail and restoration history do not confirm present-day access; check each facility separately.</p>
           <p>Looking for the most famous historic threshold of old {CITY_NAME}? This is where the old city begins: step inside and narrow lanes, brick arches and tile-work patterns turn into one continuous experience.</p>
-          <p>From {ATTRACTION_FULL_NAME} you can comfortably reach the surrounding historic sites on foot, above all <strong>{NEARBY_LANDMARK_1}</strong> and <strong>{NEARBY_LANDMARK_2}</strong>.</p>
+          <p>Nearby places to investigate from {ATTRACTION_FULL_NAME} include <strong>{NEARBY_LANDMARK_1}</strong> and <strong>{NEARBY_LANDMARK_2}</strong>.</p>
           <div class="card"><strong>What to notice:</strong> the brick arch of the gate, the inner bazaar, the royal bathhouse, Sabil Lane, Gali Surjan Singh, Chowk Wazir Khan and {NEARBY_LANDMARK_1}.</div>
         </div>
         <div class="photo-card arch">
-          <img src="https://upload.wikimedia.org/wikipedia/commons/2/28/Wazir_khan_mosque_entry.jpg" alt={`${NEARBY_LANDMARK_1} — courtyard of the famous Mughal mosque near ${ATTRACTION_SHORT_NAME}, ${CITY_NAME}`} loading="lazy" width="1200" height="900" />
+          <img src="/images/wazir-entry.jpg" alt="Historic Wazir Khan Mosque seen through its entrance, 2016" loading="lazy" width="1280" height="1264" />
           <div class="caption">Wazir Khan Mosque — photo: Shahbaz Aslam, CC BY-SA 4.0</div>
         </div>
       </div>
     </section>
 
-    <section id="visit" style="background:#f0d9b522">
+    <section id="visit" style="background:#f0d9b522"><div class="container"><p class="card">Maps hours concern the public passage only; confirm current access and each building’s hours separately.</p></div>
       <div class="container">
         <div class="section-kicker">Before you go</div><h2>Practical Visitor Guide for {ATTRACTION_SHORT_NAME}</h2>
         <div class="grid grid-3">
-          <article class="card"><h3>🎟️ Tickets / fees</h3><p>There is no separate admission ticket for walking through {ATTRACTION_SHORT_NAME}. Different rates may apply for Walled City of Lahore Authority guided walks, special events or access to restored interiors.</p></article>
-          <article class="card"><h3>🕰️ Best time of day</h3><p>08:00–10:00 is best for photography, light crowd levels and soft morning light. Evenings are livelier in the bazaar, but traffic also builds up.</p></article>
-          <article class="card"><h3>⏳ How long to stay</h3><p>Allow 20–40 minutes for the gate alone, and roughly 2–3 hours if you walk on to the royal bathhouse and the mosque.</p></article>
-          <article class="card"><h3>🚗 Parking</h3><p>The lanes of the old city are narrow. Legal parking or a drop-off around Circular Road works better; finish the last part on foot or by rickshaw.</p></article>
+          <article class="card"><h3>🎟️ Tickets / fees</h3><p>Current passage admission terms have not been confirmed by the operator. Different rates may apply for Walled City of Lahore Authority guided walks, special events or access to restored interiors.</p></article>
+          <article class="card"><h3>🕰️ Best time of day</h3><p>Plan a daylight visit after confirming access and checking weather and local notices. Crowds and traffic vary.</p></article>
+          <article class="card"><h3>⏳ How long to stay</h3><p>Rough planning estimates: 20–40 minutes around the gate or 2–3 hours for a wider visit, subject to separate facility access, queues, prayer, closures and your route.</p></article>
+          <article class="card"><h3>🚗 Parking</h3><p>Ask your driver or the local authority about legal drop-off and parking arrangements. Locations, availability and the onward route have not been verified here.</p></article>
           <article class="card"><h3>👟 What to carry</h3><p>Comfortable shoes, water, a hat in summer and modest dress for mosques. Keep an eye on phones and wallets in crowds.</p></article>
           <article class="card"><h3>📷 Photography</h3><p>Respect people’s privacy in ordinary street photography. Commercial shoots may need permits and fees from the Walled City of Lahore Authority.</p></article>
         </div>
       </div>
     </section>
 
-    <section id="weather" style="background:#eef3f7">
-      <div class="container">
-        <div class="section-kicker">Weather &amp; forecast</div>
-        <h2>Today’s weather and the 7-day forecast at {ATTRACTION_SHORT_NAME}, {CITY_NAME}</h2>
-        {weather ? (
-          <div class="wx-wrap">
-            <article class="wx-now">
-              <div class="wx-now-head">
-                <span class="wx-glyph" id="wx-glyph">{describeWeather(weather.code, 'en')[1]}</span>
-                <span class="wx-temp"><strong id="wx-temp">{weather.temperature}</strong>°</span>
-                <span class="wx-unit">°C · {CITY_NAME}</span>
-              </div>
-              <p class="wx-now-desc" id="wx-desc">{describeWeather(weather.code, 'en')[0]}</p>
-              <ul class="wx-metrics">
-                <li><span>Feels like</span><strong><span id="wx-feels">{weather.apparent}</span>°</strong></li>
-                <li><span>Humidity</span><strong><span id="wx-hum">{weather.humidity}</span>%</strong></li>
-                <li><span>Wind speed</span><strong><span id="wx-wind">{weather.wind}</span> km/h</strong></li>
-                <li><span>Rain in last hour</span><strong><span id="wx-precip">{weather.precipitation ?? 0}</span> mm</strong></li>
-              </ul>
-              <p class="wx-clock" id="wx-clock">Updated: {(weather.observedAt ?? '').replace('T', ' · ')}</p>
-            </article>
-            <div class="wx-side">
-              <div class="wx-advice">
-                <h3>Today’s advice</h3>
-                <p id="wx-advice">{weatherAdvice}</p>
-              </div>
-              {airQuality ? (
-                <div class={`wx-air wx-air-${airQuality.levelKey ?? 'unknown'}`}>
-                  <h3>Air quality</h3>
-                  <p class="wx-air-aqi">Index <strong id="wx-aqi">{airQuality.aqi}</strong> · <span id="wx-aqi-label">{airQuality.level}</span></p>
-                  <p class="wx-air-pm">Fine particles (PM2.5): <strong id="wx-pm25">{airQuality.pm25}</strong> · coarse particles (PM10): <strong id="wx-pm10">{airQuality.pm10}</strong></p>
-                </div>
-              ) : (
-                <div class="wx-air">
-                  <h3>Air quality</h3>
-                  <p>Fresh air-quality data is not available at the moment.</p>
-                </div>
-              )}
-            </div>
-          </div>
-          <ul class="wx-days">
-            {weather.days.map((day, index) => (
-              <li class="wx-day" data-day={String(index)}>
-                <span class="wx-day-name">{day.label}</span>
-                <span class="wx-day-glyph" data-glyph>{describeWeather(day.code, 'en')[1]}</span>
-                <span class="wx-day-desc" data-desc>{describeWeather(day.code, 'en')[0]}</span>
-                <span class="wx-day-temps"><strong data-max>{day.max}</strong>° / <span data-min>{day.min}</span>°</span>
-                <span class="wx-day-rain">Chance of rain <strong data-pop>{day.rainChance}</strong>%</span>
-              </li>
-            ))}
-          </ul>
-          <p class="credit">Weather figures are citywide; inside the narrow lanes of the old city, sun exposure, wind and felt temperature can differ noticeably. For long-term averages, consult the national meteorological service.</p>
-        ) : (
-          <p class="lede">Weather details are unavailable right now. Before you set off, check the latest forecast from the national meteorological service so you can plan around rain, heat or fog.</p>
-        )}
-      </div>
-    </section>
+    <WeatherPanel lang="en" />
 
-    <section id="seasons" style="background:#f7efe3">
-      <div class="container">
-        <div class="section-kicker">Seasonal planning</div>
-        <h2>When to visit {ATTRACTION_SHORT_NAME} (Seasonal Strategy)</h2>
-        <p class="lede">{CITY_NAME} has a continental climate: a long, intense summer, a short but humid monsoon, and winters marked by fog and polluted air. A visit here is essentially a walking experience, so temperature, rainfall and air quality all shape how pleasant that walk will be.</p>
-        <div class="table-wrap">
-          <table class="data-table">
-            <caption>Quarterly guidance for {ATTRACTION_FULL_NAME} in {CITY_NAME}</caption>
-            <thead>
-              <tr>
-                <th scope="col">Quarter</th>
-                <th scope="col">Weather &amp; temperature</th>
-                <th scope="col">Rain &amp; air quality</th>
-                <th scope="col">Crowds &amp; light</th>
-                <th scope="col">What to pack</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <th scope="row">February to April<br /><span class="cell-note">Spring, the best window</span></th>
-                <td>Daytime usually 22–32 °C, mild and pleasant evenings</td>
-                <td>Little rain, occasional showers; air quality generally acceptable</td>
-                <td>Higher visitor numbers, soft morning light ideal for photography</td>
-                <td>Light cotton clothing, hat, water, sunglasses</td>
-              </tr>
-              <tr>
-                <th scope="row">May to June<br /><span class="cell-note">Extreme heat</span></th>
-                <td>Daytime highs usually 38–45 °C with fierce sun</td>
-                <td>Dry conditions, dust haze and occasional dust storms</td>
-                <td>Lanes relatively empty at midday; light is harsh and shadows are hard</td>
-                <td>Extra water, salts/electrolytes, umbrella, plan to go out before dawn or after sunset</td>
-              </tr>
-              <tr>
-                <th scope="row">July to September<br /><span class="cell-note">Monsoon</span></th>
-                <td>30–38 °C with high humidity, so you tire quickly from sweating</td>
-                <td>Heavy but short downpours and thunderstorms; standing water in the lanes is common</td>
-                <td>Thinner crowds, softer and more dramatic cloud-filtered light</td>
-                <td>Umbrella or raincoat, non-slip shoes, quick-drying clothing</td>
-              </tr>
-              <tr>
-                <th scope="row">October to January<br /><span class="cell-note">Autumn, fog and smog</span></th>
-                <td>October 25–32 °C; December–January days 15–22 °C and mornings 4–8 °C</td>
-                <td>December–January brings dense fog and the city’s smog peak, with reduced visibility and possible cough or breathing discomfort</td>
-                <td>Winter mornings are usually hidden in fog; midday light is the best of the day</td>
-                <td>Light warm layered jacket, an N95-style mask, and move the morning walk to midday</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-        <div class="grid grid-3">
-          <article class="card">
-            <h3>🌡️ Climatological analysis</h3>
-            <p>On long-term climatological averages, the hottest period in {CITY_NAME} falls in May–June and the coldest in December–January, while most of the annual rainfall arrives with the monsoon (July–September). February–April and October offer the best balance for walking.</p>
-          </article>
-          <article class="card">
-            <h3>🌫️ Air quality and smog</h3>
-            <p>In winter, still air and a temperature inversion trap fog and polluted particles over the city, pushing PM2.5 sharply upward. Sensitive visitors — children, older travellers, people with asthma or heart conditions — should wear a mask on those days and check the air-quality index shown above.</p>
-          </article>
-          <article class="card">
-            <h3>🏙️ Urban environment and the lanes</h3>
-            <p>The lanes of the old city are narrow and built of brick, so in summer they can bake like an oven at midday, while in winter low air movement lets smoke and fog settle. After rain, limited drainage leaves standing water in some lanes — so keep an eye on local conditions and air quality in every season.</p>
-          </article>
-        </div>
-        <p class="credit">Summary: for the most comfortable experience choose February–April or October. In summer go out between 07:00 and 10:00, in winter between 12:00 and 15:00. During Ramadan and local festivals, bazaar hours and crowd patterns change, so plan your timing in advance.</p>
-      </div>
-    </section>
+    <section id="seasons"><div class="container"><h2>Seasonal planning</h2><p class="lede">Check the Pakistan Meteorological Department forecast and air-quality warnings for your actual date. Heat, monsoon rain and winter fog can affect a visit. These are planning considerations, not sourced monthly averages or a guarantee of clear conditions. Choose a daylight visit after checking local access; weather alone does not establish a safe route.</p></div></section>
 
-    <section id="transport">
-      <div class="container grid grid-2">
-        <div>
-          <div class="section-kicker">Location &amp; transport</div><h2>Getting here</h2>
-          <p class="lede">Narrow lanes make every last few minutes the busiest. The route below is the one most visitors take.</p>
-          <div class="route">
-            <div class="step"><h4>Ring road approach</h4><p>Arrive at the {CITY_NAME} ring road ({ATTRACTION_SHORT_NAME}, Circular Road).</p></div>
-            <div class="step"><h4>Car drop-off or legal roadside lot</h4><p>Ten minutes’ walk (about 750 m) along Circular Road to the {ATTRACTION_SHORT_NAME} drop-off.</p></div>
-            <div class="step"><h4>Rickshaw through the bazaar</h4><p>Or stop outside {ATTRACTION_SHORT_NAME} and walk the final 300 m through the bazaar.</p></div>
-          </div>
-          <div class="small-cta"><a class="btn ghost" href="#map">Jump to the map</a></div>
-        </div>
-        <div class="aside-card"><h3>Nearby anchors</h3><div class="facts">
-          <div><span>Mughal-era mosque</span><strong>{NEARBY_LANDMARK_1} — about 200 m</strong></div>
-          <div><span>Mughal bathhouse</span><strong>{NEARBY_LANDMARK_2} — about 150 m</strong></div>
-          <div><span>Largest fort</span><strong>Lahore Fort — 12-minute rickshaw ride</strong></div>
-        </div></div>
-      </div>
+    <section id="transport"><div class="container"><h2>Getting to Delhi Gate</h2><p class="lede">Use the map pin for the eastern gate near Akbari Mandi. Ask your driver about a legal drop-off on Circular Road and current restrictions; Circular Road is not Lahore Ring Road. No airport journey time, parking place or public-transport timetable is confirmed here. Check the current route and last connection with the relevant operator. The last stretch may involve busy, uneven lanes.</p></div></section>
 
-      <div class="container" style="margin-top:2.2rem">
-        <h3>Getting here in detail: reaching {ATTRACTION_SHORT_NAME} by every mode</h3>
-        <p class="lede">The general route, typical timing and practical notes for each travel mode are set out below. Actual times vary with traffic, weather and time of day, so check your route on the map before leaving.</p>
-        <div class="grid grid-3">
-          <article class="card">
-            <h3>✈️ From the airport</h3>
-            <p>{CITY_NAME}’s international airport lies east of the city and the drive to {ATTRACTION_SHORT_NAME} usually takes around 30–60 minutes in normal conditions (longer at peak traffic times). Take a taxi or a local ride-hailing service and ask to be dropped off at “Circular Road / Delhi Gate”.</p>
-          </article>
-          <article class="card">
-            <h3>🚆 From the railway station</h3>
-            <p>Lahore Junction railway station stands close to the old city. The hop from the station to Delhi Gate by rickshaw or taxi is usually short; with heavy luggage a car is a better choice than a rickshaw.</p>
-          </article>
-          <article class="card">
-            <h3>🚌 By bus and metro</h3>
-            <p>Several stops of the city’s rapid bus service (BRT/Speedo buses) and the metro train sit on or near the ring of Circular Road. Find the stop nearest your route on the map, then add a short rickshaw ride or walk. Buses are most crowded between 08:00–10:00 and 17:00–19:00.</p>
-          </article>
-          <article class="card">
-            <h3>🚕 Taxi and ride-hailing</h3>
-            <p>Ask a local ride-hailing app or taxi for “Inside Delhi Gate, Circular Road”. In heavy traffic the driver may drop you a short distance from the gate, which is entirely normal. Agree the fare before setting off in a regular taxi.</p>
-          </article>
-          <article class="card">
-            <h3>🛺 Rickshaw and Qingqi</h3>
-            <p>The most practical option for the final stretch inside the old city. They thread through traffic to reach the narrow lanes. Fix the fare before you board and give the destination as “Delhi Gate, inside Lahore”.</p>
-          </article>
-          <article class="card">
-            <h3>🚗 By car</h3>
-            <p>Driving into the bazaar itself is impractical. Use legal parking or a drop-off around Circular Road and walk the final part. Do not leave valuables in plain sight in the car and plan to head back before dark.</p>
-          </article>
-        </div>
-        <p class="map-links">
-          <a class="btn" href={MAPS_SHARE_URL} target="_blank" rel="noopener noreferrer">View the location on Google Maps ↗</a>
-          <a class="btn ghost" href={MAPS_DIRECTIONS_URL} target="_blank" rel="noopener noreferrer">Directions ↗</a>
-        </p>
-        <p class="credit">Note: the times and distances given here are general estimates and vary with traffic, weather and public holidays. ♿ For visitors with limited mobility, the best starting point is the drop-off outside the gate, since the lanes inside have uneven surfaces and some stepped sections.</p>
-      </div>
-    </section>
+    <section id="services"><div class="container"><h2>Facilities and accessibility checks</h2><p class="lede">Toilets, step-free access, parking and ATMs have not been verified on site. Maps marks an accessible entrance, which does not confirm the whole route, surfaces, ramps or nearby interiors. Contact each facility about toilets, thresholds, assistance and opening before setting out; arrange an alternative if access cannot be confirmed.</p></div></section>
 
-    <section id="services" style="background:#fff9ef">
-      <div class="container">
-        <div class="section-kicker">Visitor services</div>
-        <h2>Visitor Services &amp; Facilities around {ATTRACTION_SHORT_NAME}</h2>
-        <p class="lede">This guide describes <strong>types of facilities</strong> only and does not recommend any individual business. Around {ATTRACTION_SHORT_NAME}, facilities are basic: small shops inside the old city and larger services on the outer side.</p>
-        <div class="grid grid-3">
-          <article class="card">
-            <h3>🚻 Washrooms</h3>
-            <p>Visitor information/ticket-style centres and the compounds of major historic sites — such as {NEARBY_LANDMARK_2} and {NEARBY_LANDMARK_1} — usually have public washrooms. Cafés or restaurants can also be used. Carry tissues and hand sanitiser with you.</p>
-          </article>
-          <article class="card">
-            <h3>🅿️ Parking types</h3>
-            <p>Legal roadside parking on Circular Road, paid parking at hotels and shopping areas, and parking at large commercial plazas. Check the vehicle before leaving at night and always take a ticket or receipt.</p>
-          </article>
-          <article class="card">
-            <h3>🍽️ Types of food places</h3>
-            <p>Inside the old city you will find traditional breakfast shops, bakeries, tea houses, sweet shops and street-food stalls. For sit-down meals, a few restaurants and rooftop cafés sit on the outer side of {ATTRACTION_SHORT_NAME}. Prefer busy places cooking fresh.</p>
-          </article>
-          <article class="card">
-            <h3>🛏️ Types of places to stay</h3>
-            <p>The old city has a limited but distinctive number of heritage guesthouses, ideal for walking tours. The city’s central hotel areas (towards Mall Road or Gulberg) offer more facilities and larger rooms, while budget hotels cluster near the railway station. Late returnees are better off in a hotel with parking on the outer side.</p>
-          </article>
-          <article class="card">
-            <h3>🛒 Everyday shopping</h3>
-            <p>General stores, pharmacies, bakeries, bottled water, plus small handicraft and souvenir shops. Hand-cart and small-stall vendors sell trinkets along the heritage walk; confirm prices before buying.</p>
-          </article>
-          <article class="card">
-            <h3>⛽ Fuel &amp; charging</h3>
-            <p>Fuel stations sit along Circular Road and the main arteries rather than inside the old city, so fill up before you enter. Public EV charging points are limited; ask your hotel or a large commercial complex about charging availability in advance. Carry a power bank for your phone.</p>
-          </article>
-          <article class="card">
-            <h3>🏧 Banking &amp; payments</h3>
-            <p>ATMs and bank branches are found along the main roads and near markets. Small stalls, rickshaws and local shops often prefer cash, so carry cash mixed with small notes.</p>
-          </article>
-          <article class="card">
-            <h3>🕌 Worship &amp; prayer</h3>
-            <p>Several mosques line the route, some of them historic. Use a nearby mosque at prayer times; dress respectfully, keep quiet and leave places of worship clean.</p>
-          </article>
-          <article class="card">
-            <h3>🩺 Medical care &amp; safety</h3>
-            <p>Pharmacies and small clinics are nearby; larger hospitals are in the central parts of the city. In an emergency you can contact the local emergency service (Rescue 1122). On hot days drink water regularly and hold children’s hands in crowds.</p>
-          </article>
-          <article class="card">
-            <h3>🧳 Luggage &amp; storage</h3>
-            <p>There is no official left-luggage facility inside the old city. Carry only essentials and leave bulky bags at your hotel or in the car, since large bags are awkward in narrow lanes.</p>
-          </article>
-          <article class="card">
-            <h3>📶 Connectivity &amp; maps</h3>
-            <p>Mobile coverage is generally available, though the signal can weaken deep inside the lanes. Save an offline map before you arrive and agree a meeting point outside the gate.</p>
-          </article>
-          <article class="card">
-            <h3>♿ Mobility &amp; comfort</h3>
-            <p>Surfaces are uneven and some sections have steps, so wheelchair users and visitors who prefer a gentler pace should stick to the areas closest to the drop-off and to spots with seating, ideally with a companion.</p>
-          </article>
-        </div>
-        <p class="credit">This is non-commercial information describing facility types only; opening hours, availability and fees change over time, so confirm against current local information when needed.</p>
-      </div>
-    </section>
-
-    <section id="history">
-      <div class="container">
-        <div class="section-kicker">History &amp; significance</div>
-        <h2>History and Significance of {ATTRACTION_FULL_NAME}</h2>
-        <div class="grid grid-2">
-          <div>
-            <p>{ATTRACTION_SHORT_NAME} takes its name from the road that once ran from here towards Delhi. As one of the gates in Lahore’s Mughal city wall, it served as the eastern entrance, and the imperial road from Lahore Fort to Delhi formally began at this very threshold.</p>
-            <p>Over the centuries the gate was repaired and rebuilt many times, yet its civic role endured: traders, craftspeople, travellers and visitors all passed through the same corridor. That is why Delhi Gate is described as a living gate rather than a closed monument.</p>
-            <p>Today the Royal Trail restoration projects carried out by the Walled City of Lahore Authority (WCLA) have reopened a pedestrian route from Delhi Gate as far as {NEARBY_LANDMARK_1} and {NEARBY_LANDMARK_2}, turning the area into a centre for cultural tourism.</p>
-            <h3>An architectural snapshot</h3>
-            <p>Lahore’s Mughal wall was built of lime mortar and fired brick, and its gates were not mere openings but complete defensive and administrative units — a tall arched passage in the middle, guard and toll rooms on either side, light and air shafts above, and heavy timber leaves shut each night. This double identity of Delhi Gate — defensive gate and civic threshold — remains its defining feature.</p>
-            <p>The sequence of gates in the walled city changed repeatedly: after the Mughal peak came repair and rebuilding under Sikh rule, and during the British period most of the wall was removed, yet a handful of gates — Delhi Gate among them — survived as landmarks in the city’s memory. Today’s Delhi Gate is therefore a layered historic document, where Mughal planning, later repairs and modern restoration can all be read at one spot.</p>
-            <h3>A gate’s story and local traditions</h3>
-            <p>Picture a caravan halting before this threshold at dawn centuries ago: for a traveller arriving from outside, the gate announced the city; for those leaving, it marked the start of the long road towards Delhi. Step inside and the Royal Trail began at once, where caravans, craftspeople and buyers merged into a single stream.</p>
-            <p>Local tradition remembers Delhi Gate as the “edge” from which the inner city begins: the commerce of Akbari Mandi, the smell of spices, sacks of dry goods, the call to prayer from {NEARBY_LANDMARK_1} and the constant hum of the bazaar all gather around this one gate. These scenes are still alive today, which is why visitors say Delhi Gate is not a museum display but a piece of everyday life still running.</p>
-            <div class="card">
-              <h3>Historical periods at a glance</h3>
-              <div class="facts">
-                <div><span>Mughal era</span><strong>Founding of the walled city and the eastern gate on the imperial road towards Delhi</strong></div>
-                <div><span>18th century</span><strong>Periods of conflict and repair; the gate keeps its defensive role</strong></div>
-                <div><span>Sikh period</span><strong>Rebuilding, changes in paintwork and timber elements</strong></div>
-                <div><span>British period</span><strong>Most of the wall removed; gates remain as city markers</strong></div>
-                <div><span>Modern era</span><strong>WCLA restoration, pedestrian Royal Trail project and visitor facilities</strong></div>
-              </div>
-            </div>
-          </div>
-          <div class="card">
-            <h3>Key facts</h3>
-            <div class="facts">
-              <div><span>Type</span><strong>Historic landmark · {REVIEW_CATEGORY_EN}</strong></div>
-              <div><span>Affiliation</span><strong>Eastern gate of the Walled City of Lahore</strong></div>
-              <div><span>Address</span><strong>H8JG+PHM, Inside Delhi Gate, Akbari Mandi</strong></div>
-              <div><span>Coordinates</span><strong>{LATITUDE}, {LONGITUDE}</strong></div>
-              <div><span>Access</span><strong>Public passage, free · 24 hours</strong></div>
-              <div><span>Read more</span><strong><a href={WIKIPEDIA_URL} target="_blank" rel="noopener noreferrer">Wikipedia — {ATTRACTION_FULL_NAME}</a></strong></div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
+    <section id="history"><div class="container"><div class="section-kicker">History and architecture</div><h2>What the official heritage record establishes</h2><div class="grid grid-2"><article class="card"><h3>Historic identity</h3><p>The Department of Archaeology and Museums records Delhi Gate in Lahore’s eastern fortification, facing Delhi, with Wazir Khan Mosque in its vicinity. It lists Punjab government ownership and protection under the Antiquities Act 1975, amended 1992.</p><p>The record gives the broad relative chronology 1526–1857 CE. That range is not a verified construction date for every part of the surviving structure; this guide does not assign particular timber, paintwork or repairs to a specific period.</p></article><article class="card"><h3>Gate, bazaar and Royal Trail context</h3><p>WCLA places the mosque about 200 metres inside the gate and Shahi Hammam nearby. The gate is a historic entrance within a working urban district, not evidence that every nearby interior shares one admission system.</p><p>Historical restoration and Royal Trail descriptions are not current opening notices. Confirm access, any barriers, facility hours and tour bookings separately before travel.</p><p><a href="https://doam.gov.pk/public/sites/6449">DOAM — Delhi Gate</a> · <a href={GOVT_TOURISM_URL}>WCLA — Gates</a></p></article></div></div></section>
 
     <section id="nearby" style="background:#fff9ef">
       <div class="container"><div class="section-kicker">Explore on foot</div><h2>Landmarks &amp; Attractions around {ATTRACTION_SHORT_NAME}</h2>
         <p class="lede">While visiting {ATTRACTION_FULL_NAME}, travellers can easily take in the surrounding historic sites and points of interest, above all <strong>{NEARBY_LANDMARK_1}</strong> and <strong>{NEARBY_LANDMARK_2}</strong>. All of them lie within walking distance inside the same walled city.</p>
         <div class="grid grid-3">
-          <article class="card"><h3>Shahi Hammam</h3><p>A few steps inside {ATTRACTION_SHORT_NAME}. The only surviving Mughal public bathhouse, showing traces of frescoes and the underfloor heating system.</p></article>
+          <article class="card"><h3>Shahi Hammam</h3><p>A few steps inside {ATTRACTION_SHORT_NAME}. A historic Mughal public bathhouse, showing traces of frescoes and the underfloor heating system.</p></article>
           <article class="card"><h3>Wazir Khan Mosque</h3><p>About 200 m in along the Royal Trail. Lahore’s outstanding Mughal mosque for its tilework, calligraphy and coloured ornament.</p></article>
           <article class="card"><h3>Gali Surjan Singh</h3><p>A restored historic lane that reveals the fine-grained urban fabric of inner Lahore through timber balconies and its traditional residential character.</p></article>
           <article class="card"><h3>Chowk Wazir Khan</h3><p>The historic square in front of the mosque, framed by craft bazaars, havelis and old trading routes.</p></article>
@@ -538,55 +254,7 @@ const faqSchema = {
       </div>
     </section>
 
-    <section id="routes">
-      <div class="container">
-        <div class="section-kicker">Suggested routes</div>
-        <h2>Half-day or full-day itineraries from {ATTRACTION_SHORT_NAME} (Recommended Itineraries)</h2>
-        <p class="lede">These routes start at {ATTRACTION_FULL_NAME} and link up landmarks within walking distance. Times are approximate — adjust them for crowds, weather and prayer times.</p>
-        <div class="grid grid-2">
-          <article class="card">
-            <h3>Half-day route · about 2.5–3 hours</h3>
-            <div class="route">
-              <div class="step"><h4>① {ATTRACTION_SHORT_NAME} — start</h4><p>15 minutes: take in the massing and brick arch from outside, then go through.</p></div>
-              <div class="step"><h4>② {NEARBY_LANDMARK_2} (royal bathhouse)</h4><p>45 minutes: Mughal bath construction, frescoes and remains of the hypocaust system.</p></div>
-              <div class="step"><h4>③ Chowk Wazir Khan and {NEARBY_LANDMARK_1}</h4><p>45 minutes: spend time on the tilework, calligraphy and courtyard details.</p></div>
-              <div class="step"><h4>④ Gali Surjan Singh and Akbari Mandi</h4><p>30 minutes: timber balconies, crafts and the atmosphere of an old trading route.</p></div>
-              <div class="step"><h4>⑤ Finish: tea and the walk back</h4><p>30 minutes: a break at a nearby tea house or bakery, then back towards the gate.</p></div>
-            </div>
-          </article>
-          <article class="card">
-            <h3>Full-day route · about 6–7 hours</h3>
-            <div class="route">
-              <div class="step"><h4>① 08:00 — {ATTRACTION_SHORT_NAME}</h4><p>Start outside in soft morning light, then enter the inner bazaar.</p></div>
-              <div class="step"><h4>② 08:30 — {NEARBY_LANDMARK_2}</h4><p>The best time to see the bathhouse interiors before the crowds.</p></div>
-              <div class="step"><h4>③ 10:00 — {NEARBY_LANDMARK_1} and the Royal Trail</h4><p>A slow walk through the mosque, the square and the restored corridor.</p></div>
-              <div class="step"><h4>④ 12:30 — lunch</h4><p>A break at a nearby traditional eatery or café and top up your water.</p></div>
-              <div class="step"><h4>⑤ 14:00 — towards Lahore Fort</h4><p>Continue the full Royal Trail or take a short rickshaw hop; fort walls and Alamgiri Gate.</p></div>
-              <div class="step"><h4>⑥ 15:30 — Badshahi Mosque and Hazuri Bagh</h4><p>Courtyard, stonework and a broad view over the historic enclosure.</p></div>
-              <div class="step"><h4>⑦ 17:30 — sunset and the way back</h4><p>After sunset, a light bite in the nearby food area before returning.</p></div>
-            </div>
-          </article>
-        </div>
-        <h3>Choose a route for your group</h3>
-        <div class="grid grid-3">
-          <article class="card">
-            <h3>👨‍👩‍👧‍👦 Families with children · about 2 hours</h3>
-            <p><strong>Order:</strong> gate → courtyard of {NEARBY_LANDMARK_2} → courtyard of {NEARBY_LANDMARK_1} → tea break → back.</p>
-            <p><strong>Notes:</strong> start in the morning, take a short break every 30 minutes and hold children’s hands. Strollers are awkward in narrow busy lanes, so a carrier works better. Crowds grow around Friday prayers and at sunset.</p>
-          </article>
-          <article class="card">
-            <h3>📷 Photography &amp; architecture · about 3 hours</h3>
-            <p><strong>Order:</strong> exterior view of the gate (sunrise/morning) → brick details → arches of {NEARBY_LANDMARK_2} → tilework of {NEARBY_LANDMARK_1} → courtyard at blue hour → back.</p>
-            <p><strong>Notes:</strong> avoid harsh midday light; patterns read best in soft morning and blue-hour light. Get permission in advance for commercial shoots and tripods, and ask before photographing people.</p>
-          </article>
-          <article class="card">
-            <h3>♿ Low-effort &amp; senior visitors · about 1.5 hours</h3>
-            <p><strong>Order:</strong> drop-off outside the gate → level walk around the gate → seated break at a nearby courtyard → rickshaw back.</p>
-            <p><strong>Notes:</strong> surfaces are uneven and some sections have steps, so keep the route short, bring a companion, and avoid midday heat and the evening crowds. Arrange your return rickshaw in advance.</p>
-          </article>
-        </div>
-      </div>
-    </section>
+    <section id="routes"><div class="container"><h2>Itinerary ideas — check each stop</h2><p class="lede">Start with the gate exterior, then consider Shahi Hammam and Wazir Khan Mosque separately if their operators confirm access. WCLA describes the mosque about 200 metres inside the gate; this is orientation, not a verified accessible walking route. Allow flexible time for queues, prayer, closures and traffic. A WCLA organised evening walk is a separately booked activity, not evidence of unrestricted night access.</p></div></section>
 
     <section id="food">
       <div class="container">
@@ -609,7 +277,7 @@ const faqSchema = {
           <article class="card">
             <h3>🔬 Why the fabric is fragile</h3>
             <p>Lime mortar and fired brick absorb water. As moisture evaporates upwards, salts inside migrate to the surface and crystallise (salt efflorescence), so fragments of tile and plaster begin to flake off. Heavy rain or seepage weakens walls, while constant vibration or repeated touching wears down fresco and tile surfaces.</p>
-            <p>That is why a set distance is kept around the bathhouse frescoes and the tilework of {NEARBY_LANDMARK_1}: visitor numbers, salt in sweat and the abrasion of hands all shorten the life of the surface.</p>
+            <p>Observe posted barriers and ask the relevant site staff about restrictions around frescoes and tilework. This guide has not verified a specific exclusion distance.</p>
           </article>
           <article class="card">
             <h3>✅ Practical rules for visitors</h3>
@@ -625,31 +293,11 @@ const faqSchema = {
             </ul>
           </article>
         </div>
-        <p class="credit">This site is a non-profit educational resource: we do not recommend businesses, do not collect tickets or fees, and the instructions posted by local authorities always take priority.</p>
+        <p class="credit">This site is an independent visitor guide: we do not recommend businesses, do not collect tickets or fees, and the instructions posted by local authorities always take priority.</p>
       </div>
     </section>
 
-    <section id="reviews">
-      <div class="container">
-        <div class="section-kicker">Google Maps user reviews</div>
-        <h2>Visitor Rating &amp; Reviews (Google Maps Reviews)</h2>
-        <div class="review-panel">
-          <div class="review-score">
-            <div class="score">★ {RATING_VALUE}</div>
-            <div class="score-out-of">out of {RATING_MAX} · {RATING_COUNT} reviews</div>
-            <div class="stars" aria-hidden="true">★★★★★</div>
-            <div class="score-cat">{REVIEW_CATEGORY_EN}</div>
-          </div>
-          <div class="review-meta">
-            <p>The rating and reviews come from Google Maps user reviews — you can open Google Maps to read them.</p>
-            <p class="review-source-line">Rating and review count synced from Google Maps user reviews · {REVIEW_SYNC_EN} · <a href={MAPS_SHARE_URL} target="_blank" rel="noopener noreferrer">See all reviews on Google Maps↗</a></p>
-            <p class="map-links"><a class="btn" href={MAPS_SHARE_URL} target="_blank" rel="noopener noreferrer">See all reviews on Google Maps ↗</a></p>
-            <p class="credit">Synced from Google Maps user reviews; sync time: {REVIEW_SYNC_EN}. Copyright belongs to the original reviewers and Google Maps.</p>
-            <p class="credit">Note: this website is not the official site of Google or Google Maps. Reviews are shown on this page for display only and remain subject to Google’s terms.</p>
-          </div>
-        </div>
-      </div>
-    </section>
+    <section id="reviews"><div class="container"><h2>Dated Google Maps snapshot</h2><p>Google Maps · {RATING_VALUE}/5 · {RATING_COUNT} reviews · {REVIEW_SYNC_EN}</p><p>Manually checked snapshot; no live synchronisation or copied review text. <a href={MAPS_SHARE_URL}>Google Maps ↗</a></p></div></section>
 
     <section id="map" style="background:#5e241e0c">
       <div class="container"><div class="section-kicker">Location</div><h2>Map of {ATTRACTION_SHORT_NAME} (Location Map)</h2>
@@ -669,48 +317,7 @@ const faqSchema = {
       </div>
     </section>
 
-    <section id="sources">
-      <div class="container">
-        <div class="section-kicker">Sources &amp; references</div>
-        <h2>Sources, Attribution &amp; Updates</h2>
-        <div class="grid grid-2">
-          <div class="card">
-            <h3>Reviews · updated {REVIEW_SYNC_EN}</h3>
-            <p>The rating <strong>{RATING_VALUE}</strong> and the <strong>{RATING_COUNT}</strong> review count are synced from Google Maps user reviews; sync time {REVIEW_SYNC_EN}. Copyright belongs to the original reviewers and Google Maps. <a href={MAPS_SHARE_URL} target="_blank" rel="noopener noreferrer">See all reviews on Google Maps ↗</a></p>
-            <p class="credit">These reviews are shown on this page only and are not included in any structured data (JSON-LD).</p>
-          </div>
-          <div class="card">
-            <h3>Images</h3>
-            <p>Images on this page are used from Wikimedia Commons through their original URLs (licence: CC BY-SA 4.0).</p>
-            <ul class="src-list">
-              <li>Delhi Gate, Lahore — Saqib, CC BY-SA 4.0</li>
-              <li>Wazir Khan Mosque entry — Shahbaz Aslam, CC BY-SA 4.0</li>
-              <li>Shahi Hammam dome — Kumail Hasan, CC BY-SA 4.0</li>
-            </ul>
-            <p><a href={WIKIMEDIA_CATEGORY_URL} target="_blank" rel="noopener noreferrer">Wikimedia Commons — images of Delhi Gate (Lahore) ↗</a></p>
-          </div>
-          <div class="card">
-            <h3>Map, address and score</h3>
-            <p>The map comes from a Google Maps embed and a Google Maps share link, the address from the Google Maps listing (H8JG+PHM), and the rating and reviews likewise from Google Maps users. <a href={MAPS_SHARE_URL} target="_blank" rel="noopener noreferrer">Google Maps ↗</a></p>
-          </div>
-          <div class="card">
-            <h3>Weather &amp; air quality</h3>
-            <p>Temperature, humidity, wind, chance of rain and the seven-day forecast are shown in the “Weather &amp; forecast” section for the current time and refresh automatically on every visit. The seasonal strategy is based on long-term climatological averages and on the general pattern of the city’s air quality.</p>
-            <p class="credit">Weather and air-quality data comes from a public meteorological service; these figures are guidance only and not for professional or legal purposes.</p>
-          </div>
-          <div class="card">
-            <h3>Official sources</h3>
-            <ul class="src-list">
-              <li><a href={GOVT_TOURISM_URL} target="_blank" rel="noopener noreferrer">{COUNTRY_NAME} / {STATE_PROVINCE} tourism portal — Walled City of Lahore Authority (WCLA) ↗</a></li>
-              <li><a href={GOVT_TOURISM_URL_ALT} target="_blank" rel="noopener noreferrer">Pakistan Tourism Development Corporation ↗</a></li>
-              <li><a href={MET_OFFICE_URL} target="_blank" rel="noopener noreferrer">Pakistan Meteorological Department ↗</a></li>
-              <li><a href={WIKIPEDIA_URL} target="_blank" rel="noopener noreferrer">Wikipedia — {ATTRACTION_FULL_NAME} ↗</a></li>
-            </ul>
-            <p class="credit">Updated: {REVIEW_SYNC_EN}. This site is an independent visitor guide and is not affiliated with Google, WCLA or any government body. Verify information with the relevant authority before use.</p>
-          </div>
-        </div>
-      </div>
-    </section>
+<section id="sources"><div class="container"><h2>Sources and image rights</h2><p>Google Maps lists the public passage as open 24 hours (29 October 2026); the operator has not confirmed current access hours or admission terms. This does not establish night-time safety or access to Shahi Hammam, Wazir Khan Mosque or paid walks. Confirm each facility and any tour booking separately with WCLA before travel.</p><ul><li><a href="https://doam.gov.pk/public/sites/6449">Department of Archaeology and Museums — Delhi Gate: history, protected status and coordinates</a></li><li><a href={GOVT_TOURISM_URL}>WCLA — Gates</a></li><li><a href="https://walledcitylahore.gop.pk/product/roshan-galliyan/">WCLA — separately booked evening walk; check dates, availability and fees</a></li><li><a href={MET_OFFICE_URL}>Pakistan Meteorological Department</a></li></ul><p>The cover is our symbolic arch illustration, not a photograph of Delhi Gate. Historical mosque photograph: <a href="https://commons.wikimedia.org/wiki/File:Wazir_khan_mosque_entry.jpg">Shahbaz Aslam; crop and colour edits by Willard84, Wazir Khan Mosque entry, 6 February 2016</a>, <a href="https://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a>; locally resized; Commons version includes crop/colour edits. This depicts the mosque, not the gate or hammam.</p></div></section>
 
     <section>
       <div class="container notice"><h2 style="font-size:2rem">A little planning goes a long way</h2><p>Delhi Gate is not a “look at the building” stop; the real experience is walking in through the gate, feeling the pace of the bazaar, seeing the royal bathhouse and carrying on to Wazir Khan Mosque. Respect the everyday routes of local residents.</p></div>
@@ -719,15 +326,13 @@ const faqSchema = {
 
   <footer>
     <div class="container grid grid-2">
-      <div><img src="/icons/logo.svg" alt={`${ATTRACTION_FULL_NAME} logo`} width="64" height="64" /><strong>{ATTRACTION_FULL_NAME}</strong><p>An independent visitor guide to the historic gate inside the old city of {CITY_NAME}, {STATE_PROVINCE}, {COUNTRY_NAME}.</p><p class="credit">Rating {RATING_VALUE} · {RATING_COUNT} reviews — from Google Maps user reviews, synced {REVIEW_SYNC_EN}. <a href={MAPS_SHARE_URL} target="_blank" rel="noopener noreferrer">See all reviews on Google Maps ↗</a></p></div>
-      <div><p><a href="#sources">Sources</a> · <a href="#map">Map</a> · <a href="/en/privacy/">Privacy</a> · <a href="/en/terms/">Terms</a> · <a href="/en/cookies/">Cookie settings</a> · <a href="/" hreflang="ur" lang="ur" dir="rtl">اردو</a></p><p class="credit">Hero photo: Saqib, CC BY-SA 4.0; other photo credits are given in their captions.</p><p class="credit">This website is not the official site of Delhi Gate, the Walled City of Lahore Authority, Google or any government body.</p></div>
+      <div><img src="/icons/logo.svg" alt={`${ATTRACTION_FULL_NAME} logo`} width="64" height="64" /><strong>{ATTRACTION_FULL_NAME}</strong><p>An independent visitor guide to the historic gate inside the old city of {CITY_NAME}, {STATE_PROVINCE}, {COUNTRY_NAME}.</p></div>
+      <div><p><a href="#sources">Sources</a> · <a href="#map">Map</a> · <a href="/en/privacy/">Privacy</a> · <a href="/en/terms/">Terms</a> · <a href="/en/cookies/">Cookie information</a> · <a href="/" hreflang="ur" lang="ur" dir="rtl">اردو</a></p><p class="credit">This website is not the official site of Delhi Gate, the Walled City of Lahore Authority, Google or any government body.</p></div>
     </div>
   </footer>
 
-  <WeatherRefresh lang="en" />
-
   <script is:inline>
-    // PWA: register the offline/static cache service worker (progressive enhancement).
+    // Retire the legacy offline cache through the same service-worker URL.
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('/sw.js').catch(() => {});

@@ -1,0 +1,18 @@
+---
+import { clientLabels } from '../lib/weather';
+const {lang} = Astro.props as {lang:'ur'|'en'};
+const ur=lang==='ur';
+const labels=clientLabels(lang);
+---
+<section id="weather" data-weather data-config={JSON.stringify(labels)}><div class="container">
+<h2>{ur?'موسم اور فضائی معیار کا ماڈل':'Weather and air-quality model'}</h2>
+<p>{ur?'یہ علاقائی ماڈل ہے، دروازے پر پیمائش نہیں۔ اوقات Asia/Karachi ہیں۔ موسم سے رسائی یا رات کی حفاظت ثابت نہیں ہوتی۔':'Regional model estimates, not measurements at the gate. Times use Asia/Karachi. Conditions do not confirm access or night-time safety.'}</p>
+<p id="weather-current" aria-live="polite">{ur?'تازہ موسم دستیاب نہیں۔':'Fresh weather is unavailable.'}</p>
+<ol id="weather-days"></ol><p id="weather-air" aria-live="polite">{ur?'تازہ فضائی معیار دستیاب نہیں۔':'Fresh air-quality data is unavailable.'}</p>
+<p><a href="https://open-meteo.com/">Open-Meteo</a> · <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a> · <a href="https://open-meteo.com/en/docs/air-quality-api">CAMS air-quality model</a> · <a href="https://www.airnow.gov/aqi/aqi-basics/">US AQI</a></p>
+<noscript>{ur?'موسم کے لیے جاوا اسکرپٹ درکار ہے۔ محکمہ موسمیات کی تازہ معلومات دیکھیں۔':'Weather needs JavaScript. Check the latest national meteorological forecast.'}</noscript>
+</div></section>
+<script>
+import {startWeather} from '../lib/weather-runtime.js';
+startWeather();
+</script>
