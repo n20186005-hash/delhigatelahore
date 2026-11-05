@@ -39,9 +39,9 @@ img { display:block; max-width:100%; }
 }
 .hero::before {
   content:""; position:absolute; inset:0; z-index:-2;
-  background-image: url('/images/gate-symbol.svg');
+  background-image: url('/images/delhi-gate-lahore.jpg');
   background-size:cover; background-position:center;
-  filter:saturate(.85) contrast(1.05);
+  filter:saturate(.95) contrast(1.05);
 }
 .hero::after {
   content:""; position:absolute; inset:0; z-index:-1;
