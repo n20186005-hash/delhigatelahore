@@ -1,0 +1,16 @@
+---
+import TopicLayout from '../../layouts/TopicLayout.astro';
+import { TOPICS } from '../../data/topics';
+import type { Locale, Topic } from '../../data/topic-types';
+
+export function getStaticPaths() {
+  const locale: Locale = 'en';
+  return TOPICS.map((topic) => ({
+    params: { slug: topic.slug },
+    props: { topic, locale }
+  }));
+}
+
+const { topic, locale } = Astro.props as { topic: Topic; locale: Locale };
+---
+<TopicLayout locale={locale} topic={topic} />

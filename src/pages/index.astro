@@ -1,6 +1,7 @@
 ---
 import '../styles/global.css';
 import WeatherPanel from '../components/WeatherPanel.astro';
+import TopicLinks from '../components/TopicLinks.astro';
 import * as attraction from '../data/attraction';
 
 const {
@@ -192,7 +193,7 @@ const faqSchema = {
   <nav class="nav">
     <div class="container nav-inner">
       <a class="brand" href="#top"><img src="/icons/logo.svg" alt="دہلی گیٹ لاہور لوگو" />دہلی گیٹ لاہور</a>
-      <a href="#story">تعارف</a><a href="#visit">وزٹ پلان</a><a href="#weather">موسم</a><a href="#seasons">سہ ماہی</a><a href="#transport">کیسے پہنچیں</a><a href="#services">سہولیات</a><a href="#history">تاریخ</a><a href="#nearby">قریب کے مقامات</a><a href="#routes">راستے</a><a href="#food">کھانا</a><a href="#responsibility">ذمہ داریاں</a><a href="#reviews">جائزے</a><a href="#map">نقشہ</a><a href="#faq">سوالات</a><a href="#sources">ذرائع</a>
+      <a href="#story">تعارف</a><a href="#visit">وزٹ پلان</a><a href="#weather">موسم</a><a href="#seasons">سہ ماہی</a><a href="#transport">کیسے پہنچیں</a><a href="#services">سہولیات</a><a href="#history">تاریخ</a><a href="#nearby">قریب کے مقامات</a><a href="#routes">راستے</a><a href="#food">کھانا</a><a href="#responsibility">ذمہ داریاں</a><a href="#reviews">جائزے</a><a href="#map">نقشہ</a><a href="#faq">سوالات</a><a href="#guides">رہنما صفحات</a><a href="#sources">ذرائع</a>
       <a class="lang-switch" href="/en/" hreflang="en" lang="en">English</a>
     </div>
   </nav>
@@ -322,6 +323,8 @@ const faqSchema = {
         {faq.map(([q,a]) => <details><summary>{q}</summary><p>{a}</p></details>)}
       </div>
     </section>
+
+    <TopicLinks locale="ur" />
 
 <section id="sources"><div class="container"><h2>ذرائع اور تصویری حقوق</h2><p>گوگل میپس میں عام گزرگاہ 24 گھنٹے کھلی درج ہے (29 اکتوبر 2026ء)؛ انتظامیہ سے موجودہ رسائی کے اوقات یا فیس کی تصدیق نہیں ہوئی۔ اس اندراج سے رات کی حفاظت، شاہی حمام، وزیر خان مسجد یا بامعاوضہ واک کی رسائی ثابت نہیں ہوتی۔ ہر مقام اور ٹور کی بکنگ الگ WCLA سے معلوم کریں۔</p><ul><li><a href="https://doam.gov.pk/public/sites/6449">Department of Archaeology and Museums — Delhi Gate: history, protected status and coordinates</a></li><li><a href={GOVT_TOURISM_URL}>WCLA — Gates</a></li><li><a href="https://walledcitylahore.gop.pk/product/roshan-galliyan/">WCLA — separately booked evening walk; check dates, availability and fees</a></li><li><a href={MET_OFFICE_URL}>Pakistan Meteorological Department</a></li></ul><p>سرورق پر دہلی دروازے کی اندرونی گزرگاہ کی حقیقی تصویر ہے: <a href="https://commons.wikimedia.org/wiki/File:Delhi_gate_Lahore.jpg">Mubeenakram، 23 ستمبر 2018ء</a>، <a href="https://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a>؛ اصل تصویر بغیر تبدیلی کے۔ مسجد کی تاریخی تصویر: <a href="https://commons.wikimedia.org/wiki/File:Wazir_khan_mosque_entry.jpg">Shahbaz Aslam; crop and colour edits by Willard84, Wazir Khan Mosque entry, 6 February 2016</a>, <a href="https://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a>; locally resized; Commons version includes crop/colour edits. یہ مسجد کی تصویر ہے، دروازے یا حمام کی نہیں۔</p></div></section>
 

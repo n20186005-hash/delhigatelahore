@@ -1,6 +1,7 @@
 ---
 import '../../styles/global.css';
 import WeatherPanel from '../../components/WeatherPanel.astro';
+import TopicLinks from '../../components/TopicLinks.astro';
 import * as attraction from '../../data/attraction';
 
 const {
@@ -103,8 +104,8 @@ const faqSchema = {
 <head>
 <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Delhi Gate Lahore — Opening Hours, Location &amp; Visitor Guide</title>
-  <meta name="description" content={`Delhi Gate, Lahore — opening hours, exact location, parking and nearby Wazir Khan Mosque & Shahi Hammam in the Walled City. Maps lists 24-hour passage access; operator confirmation pending, with maps and transport tips.`} />
+  <title>Delhi Gate Lahore – Location, Opening Hours, History &amp; Visitor Guide</title>
+  <meta name="description" content="Explore Delhi Gate in Lahore's Walled City. Find its location, visiting hours, parking advice, history, and walking routes to Shahi Hammam and Wazir Khan Mosque." />
   <meta name="robots" content="index, follow, max-image-preview:large" />
   <link rel="canonical" href={canonical} />
 
@@ -123,8 +124,8 @@ const faqSchema = {
   <meta property="og:site_name" content={`${ATTRACTION_SHORT_NAME} — ${DOMAIN_NAME}`} />
   <meta property="og:locale" content="en_US" />
   <meta property="og:locale:alternate" content="ur_PK" />
-  <meta property="og:title" content={`Delhi Gate Lahore — Visitor Guide`} />
-  <meta property="og:description" content={`Opening hours, exact location, parking and nearby landmarks for ${ATTRACTION_FULL_NAME} in the Walled City. Maps lists 24-hour passage access; operator confirmation pending.`} />
+  <meta property="og:title" content="Delhi Gate Lahore – Location, Opening Hours, History & Visitor Guide" />
+  <meta property="og:description" content="Explore Delhi Gate in Lahore's Walled City. Find its location, visiting hours, parking advice, history, and walking routes to Shahi Hammam and Wazir Khan Mosque." />
   <meta property="og:type" content="website" />
   <meta property="og:url" content={canonical} />
   <meta property="og:image" content={ogImage} />
@@ -134,8 +135,8 @@ const faqSchema = {
 
   <!-- Twitter / X -->
   <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content={`Delhi Gate Lahore — Visitor Guide`} />
-  <meta name="twitter:description" content={`Opening hours, exact location, parking and nearby landmarks for ${ATTRACTION_FULL_NAME} in the Walled City. Maps lists 24-hour passage access; operator confirmation pending.`} />
+  <meta name="twitter:title" content="Delhi Gate Lahore – Location, Opening Hours, History & Visitor Guide" />
+  <meta name="twitter:description" content="Explore Delhi Gate in Lahore's Walled City. Find its location, visiting hours, parking advice, history, and walking routes to Shahi Hammam and Wazir Khan Mosque." />
   <meta name="twitter:image" content={ogImage} />
   <meta name="twitter:image:alt" content={ogImageAlt} />
 
@@ -165,7 +166,8 @@ const faqSchema = {
   <header class="hero tile-border">
     <div class="container hero-content">
       <div class="eyebrow">Walled City · Royal Trail</div>
-      <h1>{ATTRACTION_FULL_NAME} Visitor Guide</h1>
+      <h1>Delhi Gate Lahore</h1>
+      <p class="hero-name"><bdi dir="rtl" lang="ur">دہلی دروازہ</bdi> · Historic Gateway to Lahore's Walled City and Royal Trail</p>
       <p><strong>{ATTRACTION_FULL_NAME}</strong> — usually called simply <strong>{ATTRACTION_SHORT_NAME}</strong> — stands at the heart of <strong>{CITY_NAME}</strong>, <strong>{STATE_PROVINCE}</strong>, <strong>{COUNTRY_NAME}</strong>. It is the main eastern gate of the Walled City of {CITY_NAME} and the natural starting point for anyone exploring the old quarter.</p>
       <p>Beyond this high brick threshold begins the old city, where bazaars, narrow lanes, a royal bathhouse, a great mosque and everyday life all fold into a single historic streetscape.</p>
       <div class="pills"><span class="pill">Real photograph of Delhi Gate passage</span>
@@ -193,7 +195,7 @@ const faqSchema = {
   <nav class="nav">
     <div class="container nav-inner">
       <a class="brand" href="#top"><img src="/icons/logo.svg" alt={`${ATTRACTION_FULL_NAME} logo`} />{ATTRACTION_SHORT_NAME}</a>
-      <a href="#story">Overview</a><a href="#visit">Visitor guide</a><a href="#weather">Weather</a><a href="#seasons">Seasons</a><a href="#transport">Getting here</a><a href="#services">Facilities</a><a href="#history">History</a><a href="#nearby">Nearby</a><a href="#routes">Itineraries</a><a href="#food">Food</a><a href="#responsibility">Responsibility</a><a href="#reviews">Reviews</a><a href="#map">Map</a><a href="#faq">FAQ</a><a href="#sources">Sources</a>
+      <a href="#story">Overview</a><a href="#visit">Visitor guide</a><a href="#weather">Weather</a><a href="#seasons">Seasons</a><a href="#transport">Getting here</a><a href="#services">Facilities</a><a href="#history">History</a><a href="#nearby">Nearby</a><a href="#routes">Itineraries</a><a href="#food">Food</a><a href="#responsibility">Responsibility</a><a href="#reviews">Reviews</a><a href="#map">Map</a><a href="#faq">FAQ</a><a href="#guides">Guides</a><a href="#sources">Sources</a>
       <a class="lang-switch" href="/" hreflang="ur" lang="ur" dir="rtl">اردو</a>
     </div>
   </nav>
@@ -322,6 +324,8 @@ const faqSchema = {
         {faq.map(([q,a]) => <details><summary>{q}</summary><p>{a}</p></details>)}
       </div>
     </section>
+
+    <TopicLinks locale="en" />
 
 <section id="sources"><div class="container"><h2>Sources and image rights</h2><p>Google Maps lists the public passage as open 24 hours (29 October 2026); the operator has not confirmed current access hours or admission terms. This does not establish night-time safety or access to Shahi Hammam, Wazir Khan Mosque or paid walks. Confirm each facility and any tour booking separately with WCLA before travel.</p><ul><li><a href="https://doam.gov.pk/public/sites/6449">Department of Archaeology and Museums — Delhi Gate: history, protected status and coordinates</a></li><li><a href={GOVT_TOURISM_URL}>WCLA — Gates</a></li><li><a href="https://walledcitylahore.gop.pk/product/roshan-galliyan/">WCLA — separately booked evening walk; check dates, availability and fees</a></li><li><a href={MET_OFFICE_URL}>Pakistan Meteorological Department</a></li></ul><p>The cover shows a real photograph of Delhi Gate's passage. Delhi Gate photograph: <a href="https://commons.wikimedia.org/wiki/File:Delhi_gate_Lahore.jpg">Mubeenakram, 23 September 2018</a>, <a href="https://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a>, original unmodified. Historical mosque photograph: <a href="https://commons.wikimedia.org/wiki/File:Wazir_khan_mosque_entry.jpg">Shahbaz Aslam; crop and colour edits by Willard84, Wazir Khan Mosque entry, 6 February 2016</a>, <a href="https://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a>; locally resized; Commons version includes crop/colour edits. This depicts the mosque, not the gate or hammam.</p></div></section>
 

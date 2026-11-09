@@ -1,0 +1,198 @@
+---
+import '../styles/global.css';
+import * as attraction from '../data/attraction';
+import { UI, CHECK_NOTE, type Locale, type Topic } from '../data/topic-types';
+import { topicPath, topicAlternates, relatedTopics } from '../data/topics';
+
+export interface Props {
+  locale: Locale;
+  topic: Topic;
+}
+
+const { locale, topic } = Astro.props;
+const ui = UI[locale];
+const content = topic[locale];
+const site = Astro.site ?? new URL(`https://${attraction.DOMAIN_NAME}`);
+const canonical = new URL(topicPath(locale, topic.slug), site).toString();
+const otherLocale: Locale = locale === 'en' ? 'ur' : 'en';
+const otherUrl = topicPath(otherLocale, topic.slug);
+const homeUrl = new URL(ui.homeUrl, site).toString();
+const ogImage = new URL('/images/og-cover.png', site).toString();
+const alternates = topicAlternates(site, topic.slug);
+const related = relatedTopics(topic);
+const groupLabel = ui.groupLabels[topic.group];
+
+const webPageSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'WebPage',
+  '@id': `${canonical}#webpage`,
+  url: canonical,
+  name: content.title,
+  description: content.description,
+  inLanguage: ui.inLanguage,
+  isPartOf: {
+    '@type': 'WebSite',
+    name: ui.siteName,
+    url: homeUrl
+  },
+  about: {
+    '@type': 'TouristAttraction',
+    '@id': `https://${attraction.DOMAIN_NAME}/#attraction`
+  },
+  breadcrumb: { '@id': `${canonical}#breadcrumb` }
+};
+
+const breadcrumbSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'BreadcrumbList',
+  '@id': `${canonical}#breadcrumb`,
+  itemListElement: [
+    { '@type': 'ListItem', position: 1, name: ui.home, item: homeUrl },
+    { '@type': 'ListItem', position: 2, name: content.h1, item: canonical }
+  ]
+};
+
+const faqSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  '@id': `${canonical}#faq`,
+  inLanguage: ui.inLanguage,
+  mainEntity: content.faqs.map(([q, a]) => ({
+    '@type': 'Question',
+    name: q,
+    acceptedAnswer: { '@type': 'Answer', text: a }
+  }))
+};
+---
+<!doctype html>
+<html lang={ui.htmlLang} dir={ui.dir}>
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>{content.title}</title>
+<meta name="description" content={content.description} />
+<meta name="robots" content="index, follow, max-image-preview:large" />
+<link rel="canonical" href={canonical} />
+{alternates.map((a) => <link rel="alternate" hreflang={a.hreflang} href={a.href} />)}
+
+<meta name="geo.region" content={`${attraction.COUNTRY_CODE_2LETTER}-PB`} />
+<meta name="geo.placename" content={attraction.CITY_NAME} />
+<meta name="geo.position" content={`${attraction.LATITUDE};${attraction.LONGITUDE}`} />
+
+<meta property="og:site_name" content={ui.siteName} />
+<meta property="og:locale" content={ui.ogLocale} />
+<meta property="og:title" content={content.title} />
+<meta property="og:description" content={content.description} />
+<meta property="og:type" content="article" />
+<meta property="og:url" content={canonical} />
+<meta property="og:image" content={ogImage} />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content={content.title} />
+<meta name="twitter:description" content={content.description} />
+<meta name="twitter:image" content={ogImage} />
+
+<meta name="theme-color" content="#5e241e" />
+<link rel="manifest" href="/manifest.webmanifest" />
+<link rel="icon" href="/icons/favicon.svg" type="image/svg+xml" />
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" sizes="180x180" />
+
+<script is:inline type="application/ld+json" set:html={JSON.stringify(webPageSchema)}></script>
+<script is:inline type="application/ld+json" set:html={JSON.stringify(breadcrumbSchema)}></script>
+<script is:inline type="application/ld+json" set:html={JSON.stringify(faqSchema)}></script>
+<script is:inline async src="https://www.googletagmanager.com/gtag/js?id=G-HXM22WWPKP"></script>
+</head>
+<body>
+  <header class="tile-border topic-hero">
+    <div class="container">
+      <nav class="topic-nav">
+        <a class="brand" href={ui.homeUrl}><img src="/icons/logo.svg" alt={attraction.ATTRACTION_SHORT_NAME} />{attraction.ATTRACTION_SHORT_NAME}</a>
+        <a href={ui.homeUrl}>{ui.home}</a>
+        <a href={`${ui.homeUrl}#guides`}>{ui.guides}</a>
+        <a class="lang-switch" href={otherUrl} hreflang={UI[otherLocale].htmlLang} lang={UI[otherLocale].htmlLang} dir={UI[otherLocale].dir}>{ui.langSwitchLabel}</a>
+      </nav>
+      <div class="section-kicker">{content.kicker} · {groupLabel}</div>
+      <h1>{content.h1}</h1>
+      <p class="lede">{content.lead}</p>
+    </div>
+  </header>
+
+  <nav class="breadcrumb" aria-label={ui.breadcrumbAria}>
+    <div class="container breadcrumb-inner">
+      <ol>
+        <li><a href={ui.homeUrl}>{ui.home}</a></li>
+        <li aria-current="page">{content.h1}</li>
+      </ol>
+    </div>
+  </nav>
+
+  <main>
+    <section class="topic-section">
+      <div class="container topic-body">
+        {content.sections.map((section) => (
+          <article class="card">
+            <h2>{section.h}</h2>
+            {section.p?.map((paragraph) => <p>{paragraph}</p>)}
+            {section.bullets && (
+              <ul class="src-list">
+                {section.bullets.map((bullet) => <li>{bullet}</li>)}
+              </ul>
+            )}
+          </article>
+        ))}
+
+        <article class="card topic-verification">
+          <h2>{ui.sourcesTitle}</h2>
+          <p class="credit">{CHECK_NOTE[locale]}</p>
+          <p class="map-links">
+            <a class="btn" href={attraction.MAPS_SHARE_URL} target="_blank" rel="noopener noreferrer">{ui.mapLabel} ↗</a>
+            <a class="btn ghost" href={attraction.MAPS_DIRECTIONS_URL} target="_blank" rel="noopener noreferrer">{attraction.ATTRACTION_SHORT_NAME} ↗</a>
+          </p>
+          <p class="credit">{ui.mapNote}</p>
+          <ul class="src-list">
+            <li><a href={attraction.GOVT_TOURISM_URL}>Walled City of Lahore Authority — Gates</a></li>
+            <li><a href="https://doam.gov.pk/public/sites/6449">Department of Archaeology and Museums — Delhi Gate</a></li>
+            <li><a href={attraction.WIKIPEDIA_URL}>Wikipedia — Delhi Gate, Lahore</a></li>
+            <li><a href={attraction.MET_OFFICE_URL}>Pakistan Meteorological Department</a></li>
+          </ul>
+        </article>
+      </div>
+    </section>
+
+    <section class="faq topic-section" id="faq">
+      <div class="container">
+        <div class="section-kicker">FAQ</div>
+        <h2>{ui.faqTitle}</h2>
+        {content.faqs.map(([q, a]) => <details><summary>{q}</summary><p>{a}</p></details>)}
+      </div>
+    </section>
+
+    <section class="topic-section" id="related">
+      <div class="container">
+        <div class="section-kicker">{groupLabel}</div>
+        <h2>{ui.relatedTitle}</h2>
+        <div class="grid grid-3">
+          {related.map((item) => (
+            <a class="card topic-card" href={topicPath(locale, item.slug)}>
+              <strong>{item[locale].h1}</strong>
+              <span>{item[locale].description}</span>
+            </a>
+          ))}
+        </div>
+        <p class="map-links"><a class="btn ghost" href={`${ui.homeUrl}#guides`}>{ui.backHome}</a></p>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="container">
+      <p class="topic-footer-links">
+        <a href={ui.homeUrl}>{attraction.ATTRACTION_SHORT_NAME}</a>
+        <a href={`${ui.homeUrl}#guides`}>{ui.guides}</a>
+        {ui.legalLinks.map((link) => <a href={link.url}>{link.label}</a>)}
+        <a href={otherUrl} hreflang={UI[otherLocale].htmlLang}>{ui.langSwitchLabel}</a>
+      </p>
+      <p class="credit">{ui.independent}</p>
+    </div>
+  </footer>
+</body>
+</html>

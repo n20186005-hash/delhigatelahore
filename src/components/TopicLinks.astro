@@ -1,0 +1,29 @@
+---
+import { UI, type Locale } from '../data/topic-types';
+import { topicsByGroup, topicPath } from '../data/topics';
+
+export interface Props {
+  locale: Locale;
+}
+
+const { locale } = Astro.props;
+const ui = UI[locale];
+const groups = topicsByGroup();
+---
+<section id="guides" class="home-guides">
+  <div class="container">
+    <div class="section-kicker">{ui.guides}</div>
+    <h2>{ui.guidesTitle}</h2>
+    <p class="lede">{ui.guidesIntro}</p>
+    {groups.map(({ group, topics }) => (
+      <div class="guide-group">
+        <h3>{ui.groupLabels[group]}</h3>
+        <ul class="guide-links">
+          {topics.map((topic) => (
+            <li><a href={topicPath(locale, topic.slug)}>{topic[locale].h1}</a></li>
+          ))}
+        </ul>
+      </div>
+    ))}
+  </div>
+</section>
