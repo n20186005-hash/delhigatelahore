@@ -3,6 +3,7 @@ import '../styles/global.css';
 import * as attraction from '../data/attraction';
 import { UI, CHECK_NOTE, type Locale, type Topic } from '../data/topic-types';
 import { topicPath, topicAlternates, relatedTopics } from '../data/topics';
+import { getNearbyProfile, urNearby } from '../data/nearby-profiles';
 
 export interface Props {
   locale: Locale;
@@ -21,6 +22,10 @@ const ogImage = new URL('/images/og-cover.png', site).toString();
 const alternates = topicAlternates(site, topic.slug);
 const related = relatedTopics(topic);
 const groupLabel = ui.groupLabels[topic.group];
+const nearby = getNearbyProfile(topic.slug);
+const nearbyUr = urNearby[topic.slug];
+const local = (en: string, ur: string) => locale === 'en' ? en : ur;
+const nearbyMap = nearby ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(nearby.map)}` : '';
 
 const webPageSchema = {
   '@context': 'https://schema.org',
@@ -113,6 +118,11 @@ const faqSchema = {
       <div class="section-kicker">{content.kicker} · {groupLabel}</div>
       <h1>{content.h1}</h1>
       <p class="lede">{content.lead}</p>
+      {nearby && <div class="nearby-hero-facts">
+        <span>{local(nearby.type, 'تاریخی مقام · لاہور اندرون شہر')}</span>
+        <span>{local('Hours: confirm before visiting', 'اوقات: جانے سے پہلے تصدیق کریں')}</span>
+        <a href={nearbyMap} target="_blank" rel="noopener noreferrer">{local('View location ↗', 'نقشے پر مقام دیکھیں ↗')}</a>
+      </div>}
     </div>
   </header>
 
@@ -126,6 +136,48 @@ const faqSchema = {
   </nav>
 
   <main>
+    {nearby && <section class="topic-section nearby-expanded">
+      <div class="container topic-body">
+        <article class="card nearby-intro">
+          <div class="section-kicker">{local('Explore the landmark', 'اس تاریخی مقام کو دریافت کریں')}</div>
+          <h2>{local(`Discover ${nearby.name}`, content.h1)}</h2>
+          <p>{locale === 'en' ? nearby.experience : content.lead}</p>
+        </article>
+        <div class="grid grid-2">
+          <article class="card"><h2>{local('Visit tips', 'دورے کی تجاویز')}</h2><p>{locale === 'en' ? nearby.guidance : 'مقامی آمدورفت، مذہبی اوقات اور اجازت یافتہ حصوں کی پابندی کریں۔ لوگوں کی تصویر لینے سے پہلے اجازت طلب کریں۔'}</p></article>
+          <article class="card"><h2>{local('Highlights', 'نمایاں خصوصیات')}</h2><ul class="src-list">{(locale === 'en' ? nearby.highlights : nearbyUr.highlights).map(x => <li>{x}</li>)}</ul></article>
+        </div>
+        <article class="card"><h2>{local('About the landmark', 'تاریخی مقام کے بارے میں')}</h2><p>{locale === 'en' ? nearby.story : nearbyUr.theme}</p></article>
+        <article class="card"><h2>{local('Basic information', 'بنیادی معلومات')}</h2>
+          <dl class="nearby-facts">
+            <div><dt>{local('Name', 'نام')}</dt><dd>{locale === 'en' ? nearby.name : content.h1}</dd></div>
+            <div><dt>{local('Type', 'نوعیت')}</dt><dd>{local(nearby.type, 'تاریخی مقام / مقامی ثقافتی ورثہ')}</dd></div>
+            <div><dt>{local('Location', 'مقام')}</dt><dd>{local(nearby.setting, 'اندرون لاہور، پنجاب، پاکستان')}</dd></div>
+            <div><dt>{local('Map', 'نقشہ')}</dt><dd><a href={nearbyMap} target="_blank" rel="noopener noreferrer">Google Maps ↗</a></dd></div>
+          </dl>
+        </article>
+        <div class="grid grid-2">
+          <article class="card"><h2>{local('Opening hours', 'کھلنے کے اوقات')}</h2><p>{local(nearby.access, 'اوقات اور رسائی میں تبدیلی ممکن ہے؛ دورے کے دن مقام کی انتظامیہ سے تصدیق کریں۔')}</p></article>
+          <article class="card"><h2>{local('Ticket prices', 'ٹکٹ کی قیمت')}</h2><p>{local(nearby.fee, 'موجودہ داخلہ فیس کی تصدیق نہیں ہوئی؛ مقام یا منتظم سے معلوم کریں۔')}</p></article>
+        </div>
+        <article class="card"><h2>{local('How to get here', 'یہاں کیسے پہنچیں')}</h2><p>{local(nearby.transport, 'دہلی گیٹ سے موجودہ نقشے پر راستہ چیک کریں؛ پرانے شہر میں گلیاں تنگ اور مصروف ہو سکتی ہیں۔')}</p><p><a href={nearbyMap} target="_blank" rel="noopener noreferrer">{local('Open the landmark map ↗', 'مقام کا نقشہ کھولیں ↗')}</a></p></article>
+        <article class="card"><h2>{local('Discover its character', 'تاریخ، تعمیر اور ثقافت')}</h2>
+          <div class="nearby-discovery">
+            <div><h3>{local('History', 'تاریخ')}</h3><p>{locale === 'en' ? nearby.story : nearbyUr.theme}</p></div>
+            <div><h3>{local('Architecture and setting', 'تعمیر اور ماحول')}</h3><p>{locale === 'en' ? nearby.architecture : content["sections"][0]?.p?.[0] ?? nearbyUr.theme}</p></div>
+            <div><h3>{local('Culture', 'ثقافت')}</h3><p>{locale === 'en' ? nearby.culture : content.sections[1]?.p?.[0] ?? nearbyUr.theme}</p></div>
+            <div><h3>{local('Core experience', 'اہم تجربہ')}</h3><p>{locale === 'en' ? nearby.experience : content.lead}</p></div>
+          </div>
+        </article>
+        <article class="card"><h2>{local('Recommended walking route', 'تجویز کردہ پیدل راستہ')}</h2><ol class="nearby-steps">{(locale === 'en' ? nearby.route : nearbyUr.route).map(x => <li>{x}</li>)}</ol></article>
+        <article class="card"><h2>{local('Visitor guidelines', 'زائرین کے لیے ہدایات')}</h2><p>{local(nearby.guidance, 'مقامی ہدایات اور مذہبی روایات کا احترام کریں۔ مصروف گلیوں میں راستہ کھلا رکھیں اور لوگوں کی تصویر اجازت کے بغیر نہ لیں۔')}</p></article>
+        <article class="card"><h2>{local('Photo spots', 'تصاویر کے لیے مقامات')}</h2><ol class="nearby-steps">{(locale === 'en' ? nearby.photos : nearbyUr.photos).map(x => <li>{x}</li>)}</ol></article>
+        <article class="card"><h2>{local('Where to stay', 'قیام کی تجاویز')}</h2><p>{local(nearby.stay, 'ایسی رہائش منتخب کریں جہاں سے پرانے شہر کے داخلی راستوں تک قابل اعتماد آمدورفت ہو۔ بکنگ سے پہلے حالیہ جائزے اور سفر کے انتظامات دیکھیں۔')}</p></article>
+        <article class="card"><h2>{local('Visitor reviews', 'زائرین کے تاثرات')}</h2><p>{local('For current visitor feedback, photographs and access reports, consult the landmark’s Google Maps listing. No unverified individual reviews are reproduced here.', 'تازہ تاثرات، تصاویر اور رسائی کی معلومات کے لیے مقام کی گوگل میپس فہرست دیکھیں۔ یہاں غیر مصدقہ ذاتی تبصرے نقل نہیں کیے گئے۔')}</p><a href={nearbyMap} target="_blank" rel="noopener noreferrer">{local('See visitor feedback ↗', 'زائرین کے تاثرات دیکھیں ↗')}</a></article>
+        <article class="card"><h2>{local('Address and navigation', 'پتا اور راستہ')}</h2><p>{local(nearby.setting, 'اندرون لاہور، پنجاب، پاکستان')}</p><a class="btn" href={nearbyMap} target="_blank" rel="noopener noreferrer">Google Maps ↗</a></article>
+        <h2 class="nearby-existing-heading">{local('Additional original guide details', 'اصل رہنما صفحے کی مزید معلومات')}</h2>
+      </div>
+    </section>}
     <section class="topic-section">
       <div class="container topic-body">
         {content.sections.map((section) => (
